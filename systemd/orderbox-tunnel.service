@@ -1,0 +1,20 @@
+[Unit]
+Description=OrderBox reverse SSH tunnel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=orderbox
+ExecStart=/usr/bin/autossh -M 0 -N \
+  -o ServerAliveInterval=30 \
+  -o ServerAliveCountMax=3 \
+  -o ExitOnForwardFailure=yes \
+  -o StrictHostKeyChecking=no \
+  -i /home/orderbox/.ssh/orderbox_tunnel \
+  -R 2222:localhost:22 \
+  orderbox@REPLACE_WITH_GCP_IP
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

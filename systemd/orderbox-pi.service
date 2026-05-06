@@ -1,0 +1,15 @@
+[Unit]
+Description=OrderBox Pi Dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=orderbox
+WorkingDirectory=/home/orderbox/orderbox-pi
+EnvironmentFile=/home/orderbox/orderbox-pi/.env
+ExecStart=/home/orderbox/orderbox-pi/venv/bin/python main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
