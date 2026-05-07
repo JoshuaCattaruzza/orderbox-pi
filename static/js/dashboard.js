@@ -1,5 +1,19 @@
 'use strict';
 
+// ── Touch scroll ───────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.orders-list').forEach(list => {
+    let startY, startScrollTop;
+    list.addEventListener('touchstart', e => {
+      startY = e.touches[0].pageY;
+      startScrollTop = list.scrollTop;
+    }, { passive: true });
+    list.addEventListener('touchmove', e => {
+      list.scrollTop = startScrollTop + (startY - e.touches[0].pageY);
+    }, { passive: true });
+  });
+});
+
 // ── Clock ──────────────────────────────────────────────────────────────────
 function updateClock() {
   const now = new Date();
