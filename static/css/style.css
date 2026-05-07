@@ -4,7 +4,10 @@
   padding: 0;
   user-select: none;
   -webkit-user-select: none;
+  cursor: none !important;
 }
+
+*:focus { outline: none; }
 
 :root {
   --bg:         #0f0f1a;

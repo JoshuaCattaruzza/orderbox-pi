@@ -13,7 +13,10 @@ document.addEventListener('pointerdown', e => {
 
 document.addEventListener('pointermove', e => {
   if (_scrollTarget && e.buttons > 0) {
-    _scrollTarget.scrollTop = _scrollStartTop + (_scrollStartY - e.clientY);
+    const dy = _scrollStartY - e.clientY;
+    requestAnimationFrame(() => {
+      if (_scrollTarget) _scrollTarget.scrollTop = _scrollStartTop + dy;
+    });
   }
 });
 
