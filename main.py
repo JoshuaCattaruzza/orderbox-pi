@@ -48,7 +48,10 @@ def accept(order_id):
             print_order(order)
         except Exception:
             log.exception("Print failed for order %s", order_id)
-    api_client.mark_printed(order_id)
+    try:
+        api_client.mark_printed(order_id)
+    except Exception:
+        log.exception("mark_printed failed for order %s", order_id)
 
     return jsonify(result)
 
