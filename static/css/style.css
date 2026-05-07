@@ -1,4 +1,10 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
 
 :root {
   --bg:         #0f0f1a;
@@ -116,6 +122,7 @@ main.columns {
   padding: 14px;
   border-left: 4px solid transparent;
   animation: slide-in 0.2s ease;
+  touch-action: pan-y;
 }
 
 @keyframes slide-in {
