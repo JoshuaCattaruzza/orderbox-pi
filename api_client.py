@@ -42,6 +42,7 @@ def accept_order(order_id, eta_minutes=20):
 def decline_order(order_id):
     resp = requests.post(
         _url(f"/orders/{order_id}/decline"),
+        json={},
         headers=_headers(),
         timeout=TIMEOUT,
     )
@@ -52,6 +53,7 @@ def decline_order(order_id):
 def mark_printed(order_id):
     resp = requests.post(
         _url(f"/orders/{order_id}/print"),
+        json={},
         headers=_headers(),
         timeout=TIMEOUT,
     )
@@ -62,6 +64,7 @@ def mark_printed(order_id):
 def complete_order(order_id):
     resp = requests.post(
         _url(f"/orders/{order_id}/complete"),
+        json={},
         headers=_headers(),
         timeout=TIMEOUT,
     )
