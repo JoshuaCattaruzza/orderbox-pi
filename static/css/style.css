@@ -99,6 +99,10 @@ main.columns {
   flex-direction: column;
   gap: 10px;
   padding-right: 4px;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .orders-list::-webkit-scrollbar { width: 4px; }
