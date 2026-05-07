@@ -1,23 +1,24 @@
 'use strict';
 
 // ── Touch scroll ───────────────────────────────────────────────────────────
-let _touchTarget = null, _touchStartY = 0, _touchStartScroll = 0;
+let _scrollTarget = null, _scrollStartY = 0, _scrollStartTop = 0;
 
-document.addEventListener('touchstart', e => {
-  _touchTarget = e.target.closest('.orders-list');
-  if (_touchTarget) {
-    _touchStartY = e.touches[0].pageY;
-    _touchStartScroll = _touchTarget.scrollTop;
+document.addEventListener('pointerdown', e => {
+  _scrollTarget = e.target.closest('.orders-list');
+  if (_scrollTarget) {
+    _scrollStartY = e.clientY;
+    _scrollStartTop = _scrollTarget.scrollTop;
   }
-}, { passive: true });
+});
 
-document.addEventListener('touchmove', e => {
-  if (_touchTarget) {
-    _touchTarget.scrollTop = _touchStartScroll + (_touchStartY - e.touches[0].pageY);
+document.addEventListener('pointermove', e => {
+  if (_scrollTarget && e.buttons > 0) {
+    _scrollTarget.scrollTop = _scrollStartTop + (_scrollStartY - e.clientY);
   }
-}, { passive: true });
+});
 
-document.addEventListener('touchend', () => { _touchTarget = null; }, { passive: true });
+document.addEventListener('pointerup',     () => { _scrollTarget = null; });
+document.addEventListener('pointercancel', () => { _scrollTarget = null; });
 
 // ── Clock ──────────────────────────────────────────────────────────────────
 function updateClock() {
