@@ -76,7 +76,8 @@ function renderList(containerId, orders, template) {
   const existing = new Set([...el.querySelectorAll('.order-card')].map(n => n.dataset.id));
   const incoming = new Set(orders.map(o => String(o.id)));
 
-  // Remove cards no longer present
+  // Remove empty state and cards no longer present
+  el.querySelector('.empty')?.remove();
   el.querySelectorAll('.order-card').forEach(node => {
     if (!incoming.has(node.dataset.id)) node.remove();
   });
