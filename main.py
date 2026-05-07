@@ -1,5 +1,6 @@
 import logging
 from flask import Flask, render_template, jsonify, request
+from requests.exceptions import HTTPError
 from poller import OrderPoller
 from printer import print_order
 import api_client
@@ -54,12 +55,18 @@ def accept(order_id):
 
 @app.route("/api/orders/<int:order_id>/decline", methods=["POST"])
 def decline(order_id):
-    return jsonify(api_client.decline_order(order_id))
+    try:
+        return jsonify(api_client.decline_order(order_id))
+    except HTTPError as e:
+        return jsonify({"error": str(e)}), e.response.status_code
 
 
 @app.route("/api/orders/<int:order_id>/complete", methods=["POST"])
 def complete(order_id):
-    return jsonify(api_client.complete_order(order_id))
+    try:
+        return jsonify(api_client.complete_order(order_id))
+    except HTTPError as e:
+        return jsonify({"error": str(e)}), e.response.status_code
 
 
 if __name__ == "__main__":
