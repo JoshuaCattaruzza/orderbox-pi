@@ -4,11 +4,11 @@
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-USER="orderbox"
+INSTALL_USER="${SUDO_USER:-$USER}"
 
 echo "==> Installing system packages"
 sudo apt update -q
-sudo apt install -y python3-pip python3-venv autossh libusb-1.0-0 cups
+sudo apt install -y python3-pip python3-venv autossh libusb-1.0-0 cups unclutter
 
 echo "==> Creating Python virtual environment"
 python3 -m venv "$REPO_DIR/venv"
@@ -28,20 +28,15 @@ sudo systemctl daemon-reload
 sudo systemctl enable orderbox-pi.service
 
 echo "==> Configuring kiosk autostart"
-mkdir -p "/home/$USER/.config/autostart"
-cat > "/home/$USER/.config/autostart/orderbox.desktop" <<EOF
-[Desktop Entry]
-Type=Application
-Name=OrderBox Dashboard
-Exec=chromium-browser --kiosk --noerrdialogs --disable-infobars --app=http://localhost:5000
-X-GNOME-Autostart-enabled=true
+AUTOSTART_DIR="/home/$INSTALL_USER/.config/lxsession/rpd-x"
+mkdir -p "$AUTOSTART_DIR"
+cat > "$AUTOSTART_DIR/autostart" <<EOF
+@xset s off
+@xset -dpms
+@xset s noblank
+@unclutter -idle 0.5 -root
+@chromium --kiosk --noerrdialogs --disable-infobars --no-first-run --window-size=800,480 http://localhost:5000
 EOF
-
-echo "==> Disabling screen blanking"
-AUTOSTART="/etc/xdg/lxsession/LXDE-pi/autostart"
-for line in "@xset s off" "@xset -dpms" "@xset s noblank"; do
-  grep -qF "$line" "$AUTOSTART" 2>/dev/null || echo "$line" | sudo tee -a "$AUTOSTART" > /dev/null
-done
 
 echo ""
 echo "Done. Next steps:"

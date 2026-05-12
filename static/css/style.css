@@ -28,7 +28,7 @@ html, body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  font-size: 16px;
+  font-size: 17px;
   cursor: none;
 }
 
@@ -37,10 +37,10 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
+  padding: 12px 24px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  height: 52px;
+  height: 58px;
 }
 
 .logo {
@@ -68,7 +68,7 @@ main.columns {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   padding: 12px;
-  height: calc(100vh - 52px);
+  height: calc(100vh - 58px);
   overflow: hidden;
 }
 
