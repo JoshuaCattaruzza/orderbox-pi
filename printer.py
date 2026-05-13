@@ -1,5 +1,5 @@
 import logging
-from config import PRINTER_IP, PRINTER_PORT
+from config import PRINTER_DEV
 
 log = logging.getLogger(__name__)
 
@@ -7,13 +7,9 @@ LINE = "─" * 32
 
 
 def print_order(order):
-    if not PRINTER_IP:
-        log.warning("No PRINTER_IP configured — skipping print for order #%s", order["woo_order_id"])
-        return
+    from escpos.printer import File
 
-    from escpos.printer import Network
-
-    p = Network(PRINTER_IP, port=PRINTER_PORT)
+    p = File(PRINTER_DEV)
     try:
         _print(p, order)
     finally:
