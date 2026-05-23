@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      FLASK_APP: main.py
+      FLASK_DEBUG: "1"
+      PRINTER_DEV: /dev/null
+    command: flask run --host=0.0.0.0 --port=5000 --debug

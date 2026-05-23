@@ -72,5 +72,30 @@ def complete(order_id):
         return jsonify({"error": str(e)}), e.response.status_code
 
 
+@app.route("/api/orders/history")
+def history():
+    try:
+        orders = api_client.get_orders(["COMPLETED", "CANCELLED"])
+        return jsonify({"orders": orders})
+    except Exception as e:
+        log.exception("Failed to fetch history")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/orders/<int:order_id>/reprint", methods=["POST"])
+def reprint(order_id):
+    order = request.get_json(silent=True)
+    if not order:
+        order = next((o for o in poller.get_orders() if o["id"] == order_id), None)
+    if not order:
+        return jsonify({"error": "order not found"}), 404
+    try:
+        print_order(order)
+        return jsonify({"ok": True})
+    except Exception as e:
+        log.exception("Reprint failed for order %s", order_id)
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
