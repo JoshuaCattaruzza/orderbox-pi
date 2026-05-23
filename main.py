@@ -11,6 +11,13 @@ log = logging.getLogger(__name__)
 app = Flask(__name__)
 poller = OrderPoller()
 
+_tenant_info = {}
+try:
+    _tenant_info = api_client.get_tenant_info()
+    log.info("Tenant info loaded: %s", _tenant_info.get("restaurant_name"))
+except Exception:
+    log.warning("Failed to fetch tenant info — receipt header will be empty")
+
 
 @poller.on_new_order
 def _on_new_order(order):
@@ -45,7 +52,7 @@ def accept(order_id):
     order = next((o for o in poller.get_orders() if o["id"] == order_id), None)
     if order:
         try:
-            print_order(order)
+            print_order(order, _tenant_info)
         except Exception:
             log.exception("Print failed for order %s", order_id)
     try:
@@ -90,7 +97,7 @@ def reprint(order_id):
     if not order:
         return jsonify({"error": "order not found"}), 404
     try:
-        print_order(order)
+        print_order(order, _tenant_info)
         return jsonify({"ok": True})
     except Exception as e:
         log.exception("Reprint failed for order %s", order_id)

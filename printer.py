@@ -14,22 +14,40 @@ def format_line(left, right, width=PAPER_WIDTH):
     return left + " " * gap + right
 
 
-def print_order(order):
+def print_order(order, tenant_info=None):
     from escpos.printer import File
 
     p = File(PRINTER_DEV)
     try:
-        _print(p, order)
+        _print(p, order, tenant_info or {})
     finally:
         p.close()
 
 
-def _print(p, order):
+def _print(p, order, tenant_info):
     metadata = order.get("metadata") or {}
     line_items = metadata.get("line_items") or []
     delivery_type = (order.get("delivery_type") or "collection").upper()
 
-    # Header
+    # Restaurant header
+    name    = (tenant_info.get("restaurant_name")    or "").strip()
+    address = (tenant_info.get("restaurant_address") or "").strip()
+    phone   = (tenant_info.get("restaurant_phone")   or "").strip()
+
+    if name:
+        p.set(align="center", bold=True, double_height=True, double_width=False)
+        p.text(f"{name}\n")
+        p.set(bold=False, double_height=False)
+    if address:
+        p.set(align="center")
+        p.text(f"{address}\n")
+    if phone:
+        p.set(align="center")
+        p.text(f"{phone}\n")
+    if name or address or phone:
+        p.text(f"{LINE}\n")
+
+    # Order header
     p.set(align="center", bold=True, double_height=True, double_width=True)
     p.text("NEW ORDER\n")
     p.set(align="center", bold=False, double_height=False, double_width=False)

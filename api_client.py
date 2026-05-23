@@ -15,6 +15,12 @@ def _url(path):
     return f"{API_URL}/pi/{SUBDOMAIN}{path}"
 
 
+def get_tenant_info():
+    resp = requests.get(_url("/info"), headers=_headers(), timeout=TIMEOUT)
+    resp.raise_for_status()
+    return resp.json()
+
+
 def get_orders(statuses=None):
     if statuses is None:
         statuses = ["NEW", "ACCEPTED", "PRINTED"]
