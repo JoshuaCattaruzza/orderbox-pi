@@ -12,7 +12,7 @@ ExecStart=/usr/bin/autossh -M 0 -N \
   -o StrictHostKeyChecking=no \
   -i /home/pi/.ssh/orderbox_tunnel \
   -R 2222:localhost:22 \
-  orderbox@34.89.22.14
+  josh@34.89.22.14
 Restart=always
 RestartSec=10
 
