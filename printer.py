@@ -7,11 +7,18 @@ PAPER_WIDTH = 32  # 58mm paper, Font A
 LINE = "─" * PAPER_WIDTH
 
 
+def _blen(s):
+    return len(s.encode('utf-8'))
+
 def format_line(left, right, width=PAPER_WIDTH):
-    max_left = width - len(right) - 1
-    if len(left) > max_left:
-        left = left[:max_left - 1] + "~"
-    gap = width - len(left) - len(right)
+    max_left = width - _blen(right) - 1
+    while _blen(left) > max_left and left:
+        left = left[:-1]
+    if _blen(left) == max_left:
+        left = left[:-1] + "~"
+    gap = width - _blen(left) - _blen(right)
+    if gap < 1:
+        gap = 1
     return left + " " * gap + right
 
 
