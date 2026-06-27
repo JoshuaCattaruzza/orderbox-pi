@@ -167,6 +167,7 @@ function cardHistory(order) {
   ${order.customer_email ? `<div class="customer-phone">${order.customer_email}</div>` : ''}
   ${order.delivery_type === 'delivery' && order.delivery_address ? `<div class="address">${order.delivery_address}</div>` : ''}
   ${itemsList(order)}
+  ${noteBlock(order)}
   ${itemQty > 0 ? `<div class="item-count">${itemQty} item${itemQty !== 1 ? 's' : ''}</div>` : ''}
   <div class="actions single reprint-row">
     <button class="btn btn-reprint" onclick="reprintOrder(${order.id}, this)">↺ Reprint</button>
@@ -178,6 +179,12 @@ function cardHistory(order) {
 function badge(type) {
   const t = (type || 'collection').toLowerCase();
   return `<span class="badge ${t}">${t}</span>`;
+}
+
+function noteBlock(order) {
+  const note = order.metadata?.customer_note;
+  if (!note) return '';
+  return `<div class="order-note"><span class="order-note-label">Note</span>${note}</div>`;
 }
 
 function itemsList(order) {
@@ -201,6 +208,7 @@ function cardNew(order) {
   ${order.customer_phone ? `<div class="customer-phone">${order.customer_phone}</div>` : ''}
   ${order.delivery_type === 'delivery' && order.delivery_address ? `<div class="address">${order.delivery_address}</div>` : ''}
   ${itemsList(order)}
+  ${noteBlock(order)}
   <div class="order-total">£${order.total_amount}</div>
   <div class="actions">
     <button class="btn btn-accept"  onclick="acceptOrder(${order.id}, this)">✓ Accept</button>
@@ -221,6 +229,7 @@ function cardPrep(order) {
   </div>
   <div class="customer-name">${order.customer_name || 'Customer'}</div>
   ${itemsList(order)}
+  ${noteBlock(order)}
   <div class="order-total">£${order.total_amount}</div>
   <div class="actions">
     <button class="btn btn-complete" onclick="completeOrder(${order.id}, this)">✓ Complete</button>

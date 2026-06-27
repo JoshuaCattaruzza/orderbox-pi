@@ -14,17 +14,17 @@ def format_line(left, right, width=PAPER_WIDTH):
     return left + " " * gap + right
 
 
-def print_order(order, tenant_info=None):
+def print_order(order, tenant_info=None, reprint=False):
     from escpos.printer import File
 
     p = File(PRINTER_DEV)
     try:
-        _print(p, order, tenant_info or {})
+        _print(p, order, tenant_info or {}, reprint=reprint)
     finally:
         p.close()
 
 
-def _print(p, order, tenant_info):
+def _print(p, order, tenant_info, reprint=False):
     metadata = order.get("metadata") or {}
     line_items = metadata.get("line_items") or []
     delivery_type = (order.get("delivery_type") or "collection").upper()
@@ -49,7 +49,7 @@ def _print(p, order, tenant_info):
 
     # Order header
     p.set(align="center", bold=True, double_height=True, double_width=True)
-    p.text("NEW ORDER\n")
+    p.text("REPRINT\n" if reprint else "NEW ORDER\n")
     p.set(align="center", bold=False, double_height=False, double_width=False)
     p.text(f"Order #{order['woo_order_id']}\n")
     p.text(f"{LINE}\n")

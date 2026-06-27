@@ -101,7 +101,7 @@ def reprint(order_id):
     if not order:
         return jsonify({"error": "order not found"}), 404
     try:
-        print_order(order, _tenant_info)
+        print_order(order, _tenant_info, reprint=True)
         return jsonify({"ok": True})
     except Exception as e:
         log.exception("Reprint failed for order %s", order_id)
