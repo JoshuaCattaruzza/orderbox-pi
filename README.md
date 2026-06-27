@@ -10,6 +10,80 @@ orderbox-api  ←→  Flask (main.py)  ←→  Browser (dashboard.js)
                  Thermal printer (printer.py)
 ```
 
+## Pi Setup
+
+### 1. Flash the SD card
+
+Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/) with these OS Customisation settings:
+
+| Setting | Value |
+|---|---|
+| OS | Raspberry Pi OS (64-bit) — Desktop |
+| Hostname | `orderbox` |
+| Username | `pi` |
+| Timezone | `Europe/London` |
+| Keyboard | `gb` |
+| SSH | Enabled (password auth) |
+
+### 2. Boot and SSH in
+
+Insert the SD card, power on, then from your dev machine:
+
+```bash
+ssh pi@orderbox.local
+```
+
+### 3. Clone and run the install script
+
+```bash
+git clone <repo-url> ~/orderbox-pi
+cd ~/orderbox-pi
+sudo bash scripts/install.sh
+```
+
+The script will:
+- Install all system packages (autossh, cups, unclutter, xserver-xorg-video-fbdev, etc.)
+- Set up the Python venv
+- Auto-detect the SPI display framebuffer device (ILI9486)
+- Write `/etc/X11/xorg.conf` and `Xwrapper.config`
+- Configure the Chromium kiosk autostart
+- Generate the SSH tunnel key at `~/.ssh/orderbox_tunnel`
+- Enable the `orderbox-pi` and `orderbox-tunnel` systemd services
+
+At the end it will print a single `gcloud` command — copy it.
+
+### 4. Authorise the tunnel key on the VM
+
+Run the command printed by the install script on your dev machine. It looks like:
+
+```bash
+gcloud compute ssh orderbox-wp-vm --zone=europe-west2-b --project=orderbox-487000 --command="echo 'ssh-ed25519 AAAA...' >> ~/.ssh/authorized_keys"
+```
+
+### 5. Edit `.env`
+
+```bash
+nano ~/orderbox-pi/.env
+```
+
+Fill in:
+- `ORDERBOX_API_URL` — API base URL
+- `ORDERBOX_SUBDOMAIN` — restaurant subdomain
+- `ORDERBOX_PI_API_KEY` — Pi API key
+- `PRINTER_DEV` — printer device path (default `/dev/usb/lp0`)
+
+### 6. Start services and reboot
+
+```bash
+sudo systemctl start orderbox-tunnel.service
+sudo systemctl start orderbox-pi.service
+sudo reboot
+```
+
+Chromium should open automatically on the touchscreen after reboot.
+
+---
+
 ## Local dev
 
 ```bash

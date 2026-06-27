@@ -4,15 +4,15 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-User=orderbox
+User=pi
 ExecStart=/usr/bin/autossh -M 0 -N \
   -o ServerAliveInterval=30 \
   -o ServerAliveCountMax=3 \
   -o ExitOnForwardFailure=yes \
   -o StrictHostKeyChecking=no \
-  -i /home/orderbox/.ssh/orderbox_tunnel \
+  -i /home/pi/.ssh/orderbox_tunnel \
   -R 2222:localhost:22 \
-  orderbox@REPLACE_WITH_GCP_IP
+  orderbox@34.89.22.14
 Restart=always
 RestartSec=10
 
