@@ -383,7 +383,7 @@ main.columns {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0,0,0,0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -394,12 +394,26 @@ main.columns {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 28px 24px;
-  max-width: 340px;
-  width: 90%;
+  padding: 32px 24px;
+  max-width: 380px;
+  width: 92%;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.modal-sub {
+  font-size: 0.88rem;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.5;
+  margin-top: -8px;
 }
 
 .modal-message {
@@ -409,6 +423,45 @@ main.columns {
   line-height: 1.5;
   overflow-wrap: break-word;
   word-break: break-word;
+}
+
+.modal-btn-full { width: 100%; }
+
+.btn-secondary {
+  background: rgba(255,255,255,0.06);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+/* ── ETA picker ── */
+.eta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.btn-eta {
+  background: rgba(0,196,140,0.1);
+  color: var(--green);
+  border: 1px solid rgba(0,196,140,0.25);
+  padding: 20px 8px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border-radius: 8px;
+}
+
+.btn-eta:active { background: rgba(0,196,140,0.25); }
+
+.eta-unit {
+  font-size: 0.65rem;
+  font-weight: 500;
+  opacity: 0.65;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 /* ── Empty state ── */

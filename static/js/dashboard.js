@@ -245,29 +245,12 @@ function lockCard(btn, label) {
   btn.textContent = label;
 }
 
-async function acceptOrder(id, btn) {
-  lockCard(btn, 'Accepting…');
-  try {
-    const res = await post(`/api/orders/${id}/accept`, { eta_minutes: 20 });
-    if (!res.print_ok) showModal('Printer error — receipt not printed. Please reprint manually.');
-    await fetchOrders();
-  } catch {
-    fetchOrders();
-  }
+function acceptOrder(id, btn) {
+  showEtaModal(id, btn);
 }
 
-async function declineOrder(id, btn) {
-  lockCard(btn, 'Declining…');
-  try {
-    const res = await fetch(`/api/orders/${id}/decline`, { method: 'POST' });
-    if (res.status === 502) {
-      const data = await res.json().catch(() => ({}));
-      showModal(data.error || 'Refund failed — contact support');
-    }
-    await fetchOrders();
-  } catch {
-    fetchOrders();
-  }
+function declineOrder(id, btn) {
+  showDeclineConfirm(id, btn);
 }
 
 async function completeOrder(id, btn) {
@@ -292,13 +275,131 @@ async function reprintOrder(id, btn) {
   setTimeout(() => { btn.disabled = false; btn.textContent = '↺ Reprint'; }, 2000);
 }
 
-function showModal(message) {
-  document.getElementById('modal-message').textContent = message;
-  document.getElementById('modal-overlay').classList.remove('hidden');
-}
+// ── Modal ──────────────────────────────────────────────────────────────────
+let _pendingBtn = null;
 
 function closeModal() {
   document.getElementById('modal-overlay').classList.add('hidden');
+  _pendingBtn = null;
+}
+
+function showModal(message) {
+  const box = document.getElementById('modal-box');
+  box.innerHTML = '';
+
+  const msg = document.createElement('div');
+  msg.className = 'modal-message';
+  msg.textContent = message;
+
+  const btn = document.createElement('button');
+  btn.className = 'btn btn-secondary modal-btn-full';
+  btn.textContent = 'Dismiss';
+  btn.onclick = closeModal;
+
+  box.appendChild(msg);
+  box.appendChild(btn);
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function showDeclineConfirm(id, btn) {
+  _pendingBtn = btn;
+  const order = _orderData.get(id);
+  const wooId = order ? order.woo_order_id : '';
+
+  const box = document.getElementById('modal-box');
+  box.innerHTML = '';
+
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.textContent = `Decline order #${wooId}?`;
+
+  const sub = document.createElement('div');
+  sub.className = 'modal-sub';
+  sub.textContent = 'The customer will be refunded if they paid by card.';
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-secondary';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = closeModal;
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'btn btn-decline';
+  confirmBtn.textContent = 'Yes, Decline';
+  confirmBtn.onclick = () => confirmDecline(id);
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(confirmBtn);
+  box.appendChild(title);
+  box.appendChild(sub);
+  box.appendChild(actions);
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function showEtaModal(id, btn) {
+  _pendingBtn = btn;
+
+  const box = document.getElementById('modal-box');
+  box.innerHTML = '';
+
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.textContent = 'How long?';
+
+  const grid = document.createElement('div');
+  grid.className = 'eta-grid';
+
+  [10, 15, 20, 25, 30, 45].forEach(mins => {
+    const b = document.createElement('button');
+    b.className = 'btn btn-eta';
+    b.innerHTML = `${mins}<span class="eta-unit">min</span>`;
+    b.onclick = () => confirmAccept(id, mins);
+    grid.appendChild(b);
+  });
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-secondary modal-btn-full';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = closeModal;
+
+  box.appendChild(title);
+  box.appendChild(grid);
+  box.appendChild(cancelBtn);
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+async function confirmAccept(id, etaMinutes) {
+  const btn = _pendingBtn;
+  closeModal();
+  lockCard(btn, 'Accepting…');
+  try {
+    const res = await post(`/api/orders/${id}/accept`, { eta_minutes: etaMinutes });
+    if (!res.print_ok) showModal('Printer error — receipt not printed. Please reprint manually.');
+    await fetchOrders();
+  } catch {
+    fetchOrders();
+  }
+}
+
+async function confirmDecline(id) {
+  const btn = _pendingBtn;
+  closeModal();
+  lockCard(btn, 'Declining…');
+  try {
+    const res = await fetch(`/api/orders/${id}/decline`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (res.status === 502) {
+      const data = await res.json().catch(() => ({}));
+      showModal(data.error || 'Refund failed — contact Orderbox support before declining.');
+    }
+    await fetchOrders();
+  } catch {
+    fetchOrders();
+  }
 }
 
 function post(url, body) {
