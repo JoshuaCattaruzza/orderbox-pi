@@ -76,7 +76,11 @@ def decline(order_id):
     try:
         return jsonify(api_client.decline_order(order_id))
     except HTTPError as e:
-        return jsonify({"error": str(e)}), e.response.status_code
+        try:
+            body = e.response.json()
+        except Exception:
+            body = {"error": str(e)}
+        return jsonify(body), e.response.status_code
 
 
 @app.route("/api/orders/<int:order_id>/complete", methods=["POST"])
