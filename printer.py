@@ -8,9 +8,10 @@ LINE = "─" * PAPER_WIDTH
 
 
 def format_line(left, right, width=PAPER_WIDTH):
+    max_left = width - len(right) - 1
+    if len(left) > max_left:
+        left = left[:max_left - 1] + "~"
     gap = width - len(left) - len(right)
-    if gap < 1:
-        gap = 1
     return left + " " * gap + right
 
 
