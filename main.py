@@ -54,17 +54,21 @@ def accept(order_id):
 
     # Print immediately after accepting and mark as printed
     order = next((o for o in poller.get_orders() if o["id"] == order_id), None)
+    print_ok = False
     if order:
         try:
             print_order(order, _tenant_info)
+            print_ok = True
         except Exception:
             log.exception("Print failed for order %s", order_id)
-    try:
-        api_client.mark_printed(order_id)
-    except Exception:
-        log.exception("mark_printed failed for order %s", order_id)
 
-    return jsonify(result)
+    if print_ok:
+        try:
+            api_client.mark_printed(order_id)
+        except Exception:
+            log.exception("mark_printed failed for order %s", order_id)
+
+    return jsonify({**result, "print_ok": print_ok})
 
 
 @app.route("/api/orders/<int:order_id>/decline", methods=["POST"])

@@ -248,7 +248,8 @@ function lockCard(btn, label) {
 async function acceptOrder(id, btn) {
   lockCard(btn, 'Accepting…');
   try {
-    await post(`/api/orders/${id}/accept`, { eta_minutes: 20 });
+    const res = await post(`/api/orders/${id}/accept`, { eta_minutes: 20 });
+    if (!res.print_ok) showModal('Printer error — receipt not printed. Please reprint manually.');
     await fetchOrders();
   } catch {
     fetchOrders();
