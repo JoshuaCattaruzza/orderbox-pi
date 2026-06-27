@@ -258,7 +258,11 @@ async function acceptOrder(id, btn) {
 async function declineOrder(id, btn) {
   lockCard(btn, 'Declining…');
   try {
-    await post(`/api/orders/${id}/decline`);
+    const res = await fetch(`/api/orders/${id}/decline`, { method: 'POST' });
+    if (res.status === 502) {
+      const data = await res.json().catch(() => ({}));
+      showModal(data.error || 'Refund failed — contact support');
+    }
     await fetchOrders();
   } catch {
     fetchOrders();
@@ -285,6 +289,15 @@ async function reprintOrder(id, btn) {
     btn.textContent = '✗ Failed';
   }
   setTimeout(() => { btn.disabled = false; btn.textContent = '↺ Reprint'; }, 2000);
+}
+
+function showModal(message) {
+  document.getElementById('modal-message').textContent = message;
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.add('hidden');
 }
 
 function post(url, body) {
