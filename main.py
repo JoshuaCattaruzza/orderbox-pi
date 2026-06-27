@@ -19,6 +19,13 @@ try:
 except Exception:
     log.warning("Failed to fetch tenant info — receipt header will be empty")
 
+_paused = False
+try:
+    _paused = api_client.get_pause_status()
+    log.info("Pause state on startup: %s", _paused)
+except Exception:
+    log.warning("Failed to fetch pause state — defaulting to unpaused")
+
 
 @poller.on_new_order
 def _on_new_order(order):
@@ -43,6 +50,7 @@ def orders():
         "NEW":      [o for o in all_orders if o["status"] == "NEW"],
         "ACCEPTED": [o for o in all_orders if o["status"] == "ACCEPTED"],
         "PRINTED":  [o for o in all_orders if o["status"] == "PRINTED"],
+        "paused":   _paused,
     })
 
 
@@ -98,6 +106,30 @@ def history():
         return jsonify({"orders": orders})
     except Exception as e:
         log.exception("Failed to fetch history")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/pause", methods=["POST"])
+def pause():
+    global _paused
+    try:
+        result = api_client.pause()
+        _paused = True
+        return jsonify(result)
+    except Exception as e:
+        log.exception("Pause failed")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/resume", methods=["POST"])
+def resume():
+    global _paused
+    try:
+        result = api_client.resume()
+        _paused = False
+        return jsonify(result)
+    except Exception as e:
+        log.exception("Resume failed")
         return jsonify({"error": str(e)}), 500
 
 

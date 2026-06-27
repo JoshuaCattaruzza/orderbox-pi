@@ -3,6 +3,16 @@
 // ── Order data cache (used for reprint) ────────────────────────────────────
 const _orderData = new Map();
 
+// ── Pause state ─────────────────────────────────────────────────────────────
+let _paused = false;
+
+function setPaused(paused) {
+  _paused = paused;
+  const btn = document.getElementById('pause-btn');
+  btn.textContent = paused ? '▶ Resume' : '⏸ Pause';
+  btn.classList.toggle('paused', paused);
+}
+
 // ── Touch scroll ───────────────────────────────────────────────────────────
 let _scrollTarget = null, _scrollStartY = 0, _scrollStartTop = 0;
 
@@ -56,6 +66,7 @@ async function fetchOrders() {
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     render(data);
+    setPaused(data.paused ?? _paused);
     setStatus(true);
   } catch {
     setStatus(false);
@@ -273,6 +284,61 @@ async function reprintOrder(id, btn) {
     btn.textContent = '✗ Failed';
   }
   setTimeout(() => { btn.disabled = false; btn.textContent = '↺ Reprint'; }, 2000);
+}
+
+// ── Pause / resume ─────────────────────────────────────────────────────────
+function togglePause() {
+  if (_paused) {
+    doPauseAction('resume');
+  } else {
+    showPauseConfirm();
+  }
+}
+
+function showPauseConfirm() {
+  const box = document.getElementById('modal-box');
+  box.innerHTML = '';
+
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.textContent = 'Stop accepting orders?';
+
+  const sub = document.createElement('div');
+  sub.className = 'modal-sub';
+  sub.textContent = 'Customers will see a notice and won\'t be able to add items to their cart.';
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-secondary';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = closeModal;
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'btn btn-decline';
+  confirmBtn.textContent = 'Yes, Pause';
+  confirmBtn.onclick = () => { closeModal(); doPauseAction('pause'); };
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(confirmBtn);
+  box.appendChild(title);
+  box.appendChild(sub);
+  box.appendChild(actions);
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+async function doPauseAction(action) {
+  const btn = document.getElementById('pause-btn');
+  btn.disabled = true;
+  try {
+    await post(`/api/${action}`);
+    setPaused(action === 'pause');
+  } catch {
+    showModal('Failed to update store status. Please try again.');
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────

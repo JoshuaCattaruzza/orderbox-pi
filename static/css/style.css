@@ -464,6 +464,33 @@ main.columns {
   text-transform: uppercase;
 }
 
+/* ── Pause button ── */
+.btn-pause {
+  padding: 14px 22px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  min-height: 48px;
+}
+
+.btn-pause:active { opacity: 0.75; }
+.btn-pause:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.btn-pause.paused {
+  background: rgba(255,165,2,0.15);
+  color: var(--yellow);
+  border-color: rgba(255,165,2,0.4);
+}
+
 /* ── Empty state ── */
 .empty {
   text-align: center;

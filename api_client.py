@@ -76,3 +76,22 @@ def complete_order(order_id):
     )
     resp.raise_for_status()
     return resp.json()
+
+
+def pause():
+    resp = requests.post(_url("/pause"), json={}, headers=_headers(), timeout=TIMEOUT)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def resume():
+    resp = requests.post(_url("/resume"), json={}, headers=_headers(), timeout=TIMEOUT)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def get_pause_status():
+    from config import API_URL, SUBDOMAIN
+    resp = requests.get(f"{API_URL}/public/{SUBDOMAIN}/status", timeout=TIMEOUT)
+    resp.raise_for_status()
+    return resp.json().get("paused", False)
