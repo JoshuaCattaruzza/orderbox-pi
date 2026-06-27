@@ -76,14 +76,15 @@ EndSection
 EOF
 
 echo "==> Configuring kiosk autostart"
-AUTOSTART_DIR="/home/$INSTALL_USER/.config/lxsession/rpd-x"
+AUTOSTART_DIR="/home/$INSTALL_USER/.config/autostart"
 mkdir -p "$AUTOSTART_DIR"
-cat > "$AUTOSTART_DIR/autostart" <<EOF
-@xset s off
-@xset -dpms
-@xset s noblank
-@unclutter -idle 0.5 -root
-@chromium --kiosk --noerrdialogs --disable-infobars --no-first-run --window-size=800,480 http://localhost:5000
+cat > "$AUTOSTART_DIR/orderbox-kiosk.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=OrderBox Kiosk
+Exec=chromium --kiosk --noerrdialogs --disable-infobars --no-first-run --window-size=800,480 http://localhost:5000
+Hidden=false
+X-GNOME-Autostart-enabled=true
 EOF
 
 echo "==> Generating SSH tunnel key"
