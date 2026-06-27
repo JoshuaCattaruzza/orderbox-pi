@@ -245,6 +245,8 @@ main.columns {
   font-size: 0.85rem;
   color: var(--text);
   line-height: 1.4;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .order-note-label {
