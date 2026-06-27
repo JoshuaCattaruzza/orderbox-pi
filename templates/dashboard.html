@@ -6,7 +6,7 @@
   <title>OrderBox</title>
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body>
+<body{% if kiosk %} class="kiosk"{% endif %}>
   <header>
     <span class="logo">OrderBox</span>
     <nav class="tab-nav">

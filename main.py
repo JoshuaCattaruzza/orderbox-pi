@@ -1,4 +1,5 @@
 import logging
+import os
 from flask import Flask, render_template, jsonify, request
 from requests.exceptions import HTTPError
 from poller import OrderPoller
@@ -27,9 +28,12 @@ def _on_new_order(order):
 poller.start()
 
 
+KIOSK_MODE = os.environ.get("KIOSK_MODE", "false").lower() == "true"
+
+
 @app.route("/")
 def dashboard():
-    return render_template("dashboard.html")
+    return render_template("dashboard.html", kiosk=KIOSK_MODE)
 
 
 @app.route("/api/orders")
