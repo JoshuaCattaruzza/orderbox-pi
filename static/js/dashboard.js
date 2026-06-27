@@ -13,6 +13,22 @@ function setPaused(paused) {
   btn.classList.toggle('paused', paused);
 }
 
+// ── WC auth error banner ─────────────────────────────────────────────────────
+function setWcAuthError(error) {
+  let banner = document.getElementById('wc-auth-banner');
+  if (error) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'wc-auth-banner';
+      banner.className = 'wc-auth-banner';
+      banner.textContent = '⚠ WooCommerce connection error — API keys may be invalid. Update them in WooCommerce → Settings → Advanced → REST API.';
+      document.body.insertBefore(banner, document.querySelector('main') || document.body.firstChild);
+    }
+  } else {
+    banner?.remove();
+  }
+}
+
 // ── Touch scroll ───────────────────────────────────────────────────────────
 let _scrollTarget = null, _scrollStartY = 0, _scrollStartTop = 0;
 
@@ -67,6 +83,7 @@ async function fetchOrders() {
     const data = await res.json();
     render(data);
     setPaused(data.paused ?? _paused);
+    setWcAuthError(data.wc_auth_error ?? false);
     setStatus(true);
   } catch {
     setStatus(false);

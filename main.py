@@ -13,9 +13,11 @@ app = Flask(__name__)
 poller = OrderPoller()
 
 _tenant_info = {}
+_wc_auth_error = False
 try:
     _tenant_info = api_client.get_tenant_info()
-    log.info("Tenant info loaded: %s", _tenant_info.get("restaurant_name"))
+    _wc_auth_error = bool(_tenant_info.get("wc_auth_error", False))
+    log.info("Tenant info loaded: %s, wc_auth_error=%s", _tenant_info.get("restaurant_name"), _wc_auth_error)
 except Exception:
     log.warning("Failed to fetch tenant info — receipt header will be empty")
 
@@ -47,10 +49,11 @@ def dashboard():
 def orders():
     all_orders = poller.get_orders()
     return jsonify({
-        "NEW":      [o for o in all_orders if o["status"] == "NEW"],
-        "ACCEPTED": [o for o in all_orders if o["status"] == "ACCEPTED"],
-        "PRINTED":  [o for o in all_orders if o["status"] == "PRINTED"],
-        "paused":   _paused,
+        "NEW":          [o for o in all_orders if o["status"] == "NEW"],
+        "ACCEPTED":     [o for o in all_orders if o["status"] == "ACCEPTED"],
+        "PRINTED":      [o for o in all_orders if o["status"] == "PRINTED"],
+        "paused":       _paused,
+        "wc_auth_error": _wc_auth_error,
     })
 
 
@@ -107,6 +110,20 @@ def history():
     except Exception as e:
         log.exception("Failed to fetch history")
         return jsonify({"error": str(e)}), 500
+
+
+def _refresh_tenant_info():
+    global _tenant_info, _wc_auth_error
+    import threading
+    try:
+        info = api_client.get_tenant_info()
+        _tenant_info = info
+        _wc_auth_error = bool(info.get("wc_auth_error", False))
+    except Exception:
+        log.warning("Background tenant info refresh failed")
+    threading.Timer(60, _refresh_tenant_info).start()
+
+_refresh_tenant_info()
 
 
 @app.route("/api/pause", methods=["POST"])
