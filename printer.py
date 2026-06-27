@@ -3,7 +3,8 @@ from config import PRINTER_DEV
 
 log = logging.getLogger(__name__)
 
-PAPER_WIDTH = 32  # 58mm paper = 32 chars; change to 48 for 80mm paper
+PAPER_WIDTH   = 32  # Font A, 58mm paper
+PAPER_WIDTH_B = 42  # Font B, 58mm paper (smaller font, more chars per line)
 LINE = "─" * PAPER_WIDTH
 
 
@@ -73,18 +74,20 @@ def _print(p, order, tenant_info, reprint=False):
     p.text(f"{LINE}\n")
 
     # Items
+    p.set(font="b", align="left")
     if line_items:
         for item in line_items:
             qty = item.get("quantity", 1)
-            name = item.get("name", "Item")
+            item_name = item.get("name", "Item")
             total = item.get("total", "")
-            left = f"{qty}x {name}"
+            left = f"{qty}x {item_name}"
             right = f"£{total}" if total else ""
-            p.text(format_line(left, right) + "\n")
+            p.text(format_line(left, right, PAPER_WIDTH_B) + "\n")
             p.text("\n")
     else:
         p.text("(no item details)\n")
 
+    p.set(font="a")
     p.text(f"{LINE}\n")
 
     # Total
