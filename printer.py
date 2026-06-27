@@ -3,7 +3,7 @@ from config import PRINTER_DEV
 
 log = logging.getLogger(__name__)
 
-PAPER_WIDTH = 32  # 58mm paper, Font A
+PAPER_WIDTH = 24  # actual printable width confirmed on physical printer
 LINE = "─" * PAPER_WIDTH
 
 
