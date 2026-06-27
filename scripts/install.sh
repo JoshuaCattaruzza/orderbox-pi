@@ -23,6 +23,9 @@ if [ ! -f "$REPO_DIR/.env" ]; then
   echo "    Created .env from example — edit it before starting the service"
 fi
 
+echo "==> Adding $INSTALL_USER to lp group (printer access)"
+sudo usermod -a -G lp "$INSTALL_USER"
+
 echo "==> Installing systemd services"
 sudo cp "$REPO_DIR/systemd/orderbox-pi.service"     /etc/systemd/system/
 sudo cp "$REPO_DIR/systemd/orderbox-tunnel.service" /etc/systemd/system/
