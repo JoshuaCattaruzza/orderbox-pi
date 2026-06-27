@@ -4,10 +4,10 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-User=orderbox
-WorkingDirectory=/home/orderbox/orderbox-pi
-EnvironmentFile=/home/orderbox/orderbox-pi/.env
-ExecStart=/home/orderbox/orderbox-pi/venv/bin/python main.py
+User=pi
+WorkingDirectory=/home/pi/orderbox-pi
+EnvironmentFile=/home/pi/orderbox-pi/.env
+ExecStart=/home/pi/orderbox-pi/venv/bin/python main.py
 Restart=always
 RestartSec=5
 
