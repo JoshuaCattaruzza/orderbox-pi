@@ -62,16 +62,27 @@ setInterval(updateClock, 1000);
 updateClock();
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
+function switchTab(btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const isHistory = btn.dataset.tab === 'history';
+  document.getElementById('live-view').classList.toggle('hidden', isHistory);
+  document.getElementById('history-view').classList.toggle('hidden', !isHistory);
+  if (isHistory) fetchHistory();
+}
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
+  let _touchFired = false;
+
+  btn.addEventListener('touchstart', (e) => {
+    e.preventDefault(); // instant response, no 300ms delay
+    _touchFired = true;
+    switchTab(btn);
+  }, { passive: false });
+
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    const isHistory = btn.dataset.tab === 'history';
-    document.getElementById('live-view').classList.toggle('hidden', isHistory);
-    document.getElementById('history-view').classList.toggle('hidden', !isHistory);
-
-    if (isHistory) fetchHistory();
+    if (_touchFired) { _touchFired = false; return; }
+    switchTab(btn);
   });
 });
 
