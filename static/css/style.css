@@ -334,7 +334,7 @@ main.columns {
   animation: slide-in 0.2s ease;
 }
 
-.history-card.completed { border-left-color: var(--blue); }
+.history-card.completed { border-left-color: var(--green); }
 .history-card.cancelled { border-left-color: var(--red); }
 
 .history-meta {
@@ -364,7 +364,7 @@ main.columns {
   letter-spacing: 0.5px;
 }
 
-.status-badge.completed { background: rgba(58,134,255,0.15); color: var(--blue); }
+.status-badge.completed { background: rgba(0,196,140,0.15);  color: var(--green); }
 .status-badge.cancelled { background: rgba(255,71,87,0.15);  color: var(--red); }
 
 .history-header {
