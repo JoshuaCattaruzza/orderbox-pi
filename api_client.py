@@ -5,10 +5,7 @@ TIMEOUT = 5
 
 
 def _headers():
-    h = {"Content-Type": "application/json"}
-    if PI_API_KEY:
-        h["X-Api-Key"] = PI_API_KEY
-    return h
+    return {"Content-Type": "application/json", "X-Api-Key": PI_API_KEY}
 
 
 def _url(path):
