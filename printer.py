@@ -100,6 +100,21 @@ def _print(p, order, tenant_info, reprint=False):
     p.text(format_line("TOTAL", f"£{order.get('total_amount') or '0.00'}") + "\n")
     p.set(bold=False)
 
+    # Payment method
+    payment = (order.get("payment_method") or metadata.get("payment_method") or "").lower()
+    p.text(f"{LINE}\n")
+    p.set(bold=True, align="center")
+    if payment in ("stripe", "woocommerce_payments"):
+        p.text("** PAID ONLINE **\n")
+        p.set(bold=False, align="center")
+        p.text("Do not collect payment\n")
+    elif payment == "cod":
+        p.text("** CASH ON DELIVERY **\n")
+        p.set(bold=False, align="center")
+        p.text(f"Collect £{order.get('total_amount') or '0.00'}\n")
+        p.text("at door\n")
+    p.set(bold=False, align="left")
+
     # Customer note
     note = metadata.get("customer_note", "").strip()
     if note:
