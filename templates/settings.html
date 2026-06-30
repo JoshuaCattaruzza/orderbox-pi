@@ -126,7 +126,6 @@
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-green  { background: var(--green);  color: #000; }
     .btn-muted  { background: var(--border); color: var(--text); }
-    .btn-yellow { background: var(--yellow); color: #000; }
 
     #msg {
       margin-top: 14px;
@@ -171,16 +170,13 @@
 
       <label for="ssid-input">Network name (SSID)</label>
       <input type="text" id="ssid-input" autocomplete="off" autocorrect="off"
-             spellcheck="false" placeholder="e.g. MyRestaurant_WiFi"
-             onfocus="showKeyboard()" />
+             spellcheck="false" placeholder="e.g. MyRestaurant_WiFi" />
 
       <label for="pw-input">Password</label>
-      <input type="password" id="pw-input" autocomplete="off" placeholder="Leave blank if open network"
-             onfocus="showKeyboard()" />
+      <input type="password" id="pw-input" autocomplete="off" placeholder="Leave blank if open network" />
 
       <div class="btn-row">
         <button class="btn btn-green" id="connect-btn" onclick="connectWifi()">Connect</button>
-        <button class="btn btn-yellow" id="kb-btn" onclick="toggleKeyboard()">&#9109; Keyboard</button>
       </div>
       <div id="msg"></div>
     </div>
@@ -278,19 +274,6 @@
           btn.textContent = 'Connect';
           setMsg('Request failed', false);
         });
-    };
-
-    var _kbVisible = false;
-    window.showKeyboard = function () {
-      if (_kbVisible) return;
-      fetch('/api/keyboard/toggle', { method: 'POST' })
-        .then(function (r) { return r.json(); })
-        .then(function (d) { _kbVisible = d.visible; });
-    };
-    window.toggleKeyboard = function () {
-      fetch('/api/keyboard/toggle', { method: 'POST' })
-        .then(function (r) { return r.json(); })
-        .then(function (d) { _kbVisible = d.visible; });
     };
 
     function signalBars(pct) {
