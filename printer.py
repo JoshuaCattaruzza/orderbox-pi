@@ -41,6 +41,7 @@ def print_order(order, tenant_info=None, reprint=False):
 
 
 def _print(p, order, tenant_info, reprint=False):
+    p.set(normal_textsize=True)  # reset any lingering size state from previous job
     metadata = order.get("metadata") or {}
     line_items = metadata.get("line_items") or []
     delivery_type = (order.get("delivery_type") or "collection").upper()
@@ -95,7 +96,7 @@ def _print(p, order, tenant_info, reprint=False):
     p.text(f"{LINE}\n")
 
     # Items
-    p.set(font="a", align="left", bold=False, double_height=False, double_width=False)
+    p.set(font="a", align="left", bold=False, normal_textsize=True)
     if line_items:
         for item in line_items:
             qty = item.get("quantity", 1)
