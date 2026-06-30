@@ -103,7 +103,7 @@ async function fetchOrders() {
 
 function setStatus(ok) {
   const el = document.getElementById('status');
-  el.textContent = ok ? '● Connected' : '● Disconnected';
+  el.textContent = '●';
   el.className = 'status ' + (ok ? 'connected' : 'disconnected');
 }
 

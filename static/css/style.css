@@ -60,7 +60,7 @@ header {
 }
 
 .tab-btn {
-  padding: 16px 36px;
+  padding: 14px 22px;
   background: none;
   border: none;
   border-radius: 8px;
@@ -84,7 +84,7 @@ header {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
 }
 
 .logo {
