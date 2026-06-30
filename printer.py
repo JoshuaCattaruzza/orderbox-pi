@@ -57,7 +57,10 @@ def _print(p, order, tenant_info, reprint=False):
         p.set(bold=False)
     if address:
         p.set(align="center")
-        p.text(f"{address}\n")
+        for part in address.split(","):
+            part = part.strip()
+            if part:
+                p.text(f"{part}\n")
     if phone:
         p.set(align="center")
         p.text(f"{phone}\n")
@@ -84,8 +87,17 @@ def _print(p, order, tenant_info, reprint=False):
     p.set(bold=True)
     p.text(f"[{delivery_type}]\n")
     p.set(bold=False)
-    if delivery_type == "DELIVERY" and order.get("delivery_address"):
-        p.text(f"{order['delivery_address']}\n")
+    if delivery_type == "DELIVERY":
+        shipping = metadata.get("shipping") or {}
+        addr_parts = [
+            shipping.get("address_1", ""),
+            shipping.get("address_2", ""),
+            shipping.get("city", ""),
+            shipping.get("postcode", ""),
+        ]
+        for part in addr_parts:
+            if part:
+                p.text(f"{part}\n")
 
     meta_data = metadata.get("meta_data") or []
     delivery_date = next((m["value"] for m in meta_data if m.get("key") == "Delivery Date"), None)
