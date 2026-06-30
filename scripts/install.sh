@@ -10,7 +10,7 @@ SSH_KEY="/home/$INSTALL_USER/.ssh/orderbox_tunnel"
 echo "==> Installing system packages"
 sudo apt update -q
 sudo apt install -y python3-pip python3-venv autossh libusb-1.0-0 cups unclutter \
-  xserver-xorg-video-fbdev xserver-xorg-legacy onboard at-spi2-core
+  xserver-xorg-video-fbdev xserver-xorg-legacy onboard at-spi2-core at
 
 echo "==> Creating Python virtual environment"
 python3 -m venv "$REPO_DIR/venv"
