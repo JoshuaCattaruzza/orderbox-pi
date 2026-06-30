@@ -139,8 +139,8 @@ def _print(p, order, tenant_info, reprint=False):
 
     # Payment method
     payment = (order.get("payment_method") or metadata.get("payment_method") or "").lower()
-    p.text(f"{LINE}\n")
-    p.set(bold=True, align="center")
+    p.text(f"{LINE_B}\n")
+    p.set(font="a", bold=True, align="center")
     if payment in ("stripe", "woocommerce_payments"):
         p.text("** PAID ONLINE **\n")
         p.set(bold=False, align="center")
