@@ -93,7 +93,7 @@ cat > "$AUTOSTART_DIR/orderbox-kiosk.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=OrderBox Kiosk
-Exec=chromium --kiosk --noerrdialogs --disable-infobars --no-first-run --window-size=800,480 --force-renderer-accessibility http://localhost:5000
+Exec=chromium --kiosk --noerrdialogs --disable-infobars --no-first-run --window-size=800,480 --force-renderer-accessibility --password-store=basic http://localhost:5000
 Hidden=false
 X-GNOME-Autostart-enabled=true
 EOF
