@@ -10,7 +10,7 @@
     .settings-wrap {
       max-width: 560px;
       margin: 40px auto;
-      padding: 0 20px 60px;
+      padding: 0 20px 280px;
     }
     .settings-header {
       display: flex;
@@ -62,11 +62,10 @@
     }
     .wifi-status .connected { color: var(--green); }
     .wifi-status .disconnected { color: var(--muted); }
-
     .network-list {
       list-style: none;
       margin-bottom: 20px;
-      max-height: 220px;
+      max-height: 180px;
       overflow-y: auto;
     }
     .network-item {
@@ -80,13 +79,11 @@
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
-    .network-item:hover, .network-item:active { background: rgba(255,255,255,0.06); }
+    .network-item:active { background: rgba(255,255,255,0.06); }
     .network-item .ssid { font-weight: 600; }
     .network-item .signal { font-size: 0.82rem; color: var(--muted); }
-    .network-item .lock { font-size: 0.8rem; color: var(--muted); margin-left: 6px; }
     .network-item.selected { background: rgba(0,196,140,0.1); }
     .network-item.selected .ssid { color: var(--green); }
-
     label {
       display: block;
       font-size: 0.82rem;
@@ -105,19 +102,16 @@
       font-size: 1rem;
       font-family: inherit;
       margin-bottom: 16px;
-      cursor: text;
       -webkit-tap-highlight-color: transparent;
+      user-select: text;
+      -webkit-user-select: text;
     }
     input:focus {
       border-color: var(--green);
       background: rgba(0,196,140,0.06);
       outline: none;
     }
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn {
       padding: 13px 22px;
       border-radius: 8px;
@@ -130,18 +124,12 @@
       min-height: 48px;
       transition: opacity 0.15s;
     }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-green  { background: var(--green);  color: #000; }
-    .btn-muted  { background: var(--border); color: var(--text); }
-
-    #msg {
-      margin-top: 14px;
-      font-size: 0.9rem;
-      min-height: 1.4em;
-    }
+    .btn:disabled { opacity: 0.4; }
+    .btn-green { background: var(--green); color: #000; }
+    .btn-muted { background: var(--border); color: var(--text); }
+    #msg { margin-top: 14px; font-size: 0.9rem; min-height: 1.4em; }
     .msg-ok  { color: var(--green); }
     .msg-err { color: var(--red); }
-
     .scan-row {
       display: flex;
       justify-content: space-between;
@@ -149,11 +137,49 @@
       margin-bottom: 12px;
     }
     .scan-row h2 { margin: 0; }
-    #scan-btn {
-      font-size: 0.8rem;
-      padding: 8px 14px;
-      min-height: 36px;
+    #scan-btn { font-size: 0.8rem; padding: 8px 14px; min-height: 36px; }
+
+    /* ── On-screen keyboard ── */
+    #osk {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #1a1a2e;
+      border-top: 1px solid #2a2a42;
+      padding: 10px 6px 14px;
+      z-index: 200;
+      user-select: none;
+      -webkit-user-select: none;
     }
+    #osk.visible { display: block; }
+    .osk-row {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-bottom: 5px;
+    }
+    .osk-key {
+      background: #2a2a42;
+      color: #e8e8f0;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      min-width: 52px;
+      height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      flex: 1;
+      max-width: 68px;
+    }
+    .osk-key:active { background: #3a3a58; }
+    .osk-key.wide  { flex: 1.8; max-width: 110px; font-size: 0.8rem; }
+    .osk-key.space { flex: 4;   max-width: 260px; }
+    .osk-key.shift-active { background: #00c48c; color: #000; }
   </style>
 </head>
 <body>
@@ -177,12 +203,11 @@
 
       <label for="ssid-input">Network name (SSID)</label>
       <input type="text" id="ssid-input" autocomplete="off" autocorrect="off"
-             spellcheck="false" placeholder="e.g. MyRestaurant_WiFi"
-             onfocus="showKeyboard()" />
+             spellcheck="false" placeholder="e.g. MyRestaurant_WiFi" readonly />
 
       <label for="pw-input">Password</label>
-      <input type="password" id="pw-input" autocomplete="off" placeholder="Leave blank if open network"
-             onfocus="showKeyboard()" />
+      <input type="password" id="pw-input" autocomplete="off"
+             placeholder="Leave blank if open network" readonly />
 
       <div class="btn-row">
         <button class="btn btn-green" id="connect-btn" onclick="connectWifi()">Connect</button>
@@ -191,8 +216,17 @@
     </div>
   </div>
 
+  <!-- On-screen keyboard -->
+  <div id="osk">
+    <div class="osk-row" id="osk-row-0"></div>
+    <div class="osk-row" id="osk-row-1"></div>
+    <div class="osk-row" id="osk-row-2"></div>
+    <div class="osk-row" id="osk-row-3"></div>
+  </div>
+
   <script>
   (function () {
+    /* ── WiFi logic ── */
     function setMsg(text, ok) {
       var el = document.getElementById('msg');
       el.textContent = text;
@@ -235,14 +269,14 @@
             var li = document.createElement('li');
             li.className = 'network-item';
             var bars = signalBars(n.signal);
-            var lock = n.security && n.security !== '--' ? ' <span class="lock">&#128274;</span>' : '';
+            var lock = n.security && n.security !== '--' ? ' &#128274;' : '';
             li.innerHTML = '<span class="ssid">' + esc(n.ssid) + lock + '</span>' +
                            '<span class="signal">' + bars + ' ' + n.signal + '%</span>';
             li.addEventListener('click', function () {
               document.querySelectorAll('.network-item').forEach(function (x) { x.classList.remove('selected'); });
               li.classList.add('selected');
               document.getElementById('ssid-input').value = n.ssid;
-              document.getElementById('pw-input').focus();
+              oskFocus(document.getElementById('pw-input'));
             });
             list.appendChild(li);
           });
@@ -262,6 +296,7 @@
       btn.disabled = true;
       btn.textContent = 'Connecting…';
       setMsg('', true);
+      oskHide();
       fetch('/api/wifi/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -285,10 +320,93 @@
         });
     };
 
-    window.showKeyboard = function () {
-      fetch('/api/keyboard/show', { method: 'POST' });
-    };
+    /* ── On-screen keyboard ── */
+    var _activeInput = null;
+    var _shifted = false;
 
+    var ROWS = [
+      ['1','2','3','4','5','6','7','8','9','0','-','_'],
+      ['q','w','e','r','t','y','u','i','o','p'],
+      ['a','s','d','f','g','h','j','k','l'],
+      ['SHIFT','z','x','c','v','b','n','m','BACK','HIDE']
+    ];
+
+    function buildOsk() {
+      ROWS.forEach(function (row, ri) {
+        var rowEl = document.getElementById('osk-row-' + ri);
+        row.forEach(function (k) {
+          var btn = document.createElement('button');
+          btn.className = 'osk-key';
+          btn.dataset.key = k;
+          if (k === 'SHIFT') { btn.textContent = '⇧'; btn.classList.add('wide'); }
+          else if (k === 'BACK')  { btn.textContent = '⌫'; btn.classList.add('wide'); }
+          else if (k === 'HIDE')  { btn.textContent = '▼'; btn.classList.add('wide'); }
+          else { btn.textContent = k; }
+          btn.addEventListener('mousedown',  function (e) { e.preventDefault(); });
+          btn.addEventListener('touchstart', function (e) { e.preventDefault(); oskPress(k, btn); }, { passive: false });
+          btn.addEventListener('click',      function ()  { oskPress(k, btn); });
+          rowEl.appendChild(btn);
+        });
+        // Add space bar on last row
+        if (ri === ROWS.length - 1) {
+          var sp = document.createElement('button');
+          sp.className = 'osk-key space';
+          sp.dataset.key = ' ';
+          sp.textContent = 'space';
+          sp.addEventListener('mousedown',  function (e) { e.preventDefault(); });
+          sp.addEventListener('touchstart', function (e) { e.preventDefault(); oskPress(' ', sp); }, { passive: false });
+          sp.addEventListener('click',      function ()  { oskPress(' ', sp); });
+          // Insert before SHIFT key
+          rowEl.insertBefore(sp, rowEl.firstChild);
+        }
+      });
+    }
+
+    function oskPress(k, btn) {
+      if (!_activeInput) return;
+      if (k === 'HIDE')  { oskHide(); return; }
+      if (k === 'SHIFT') { _shifted = !_shifted; updateShift(); return; }
+      if (k === 'BACK') {
+        var v = _activeInput.value;
+        _activeInput.value = v.slice(0, -1);
+        return;
+      }
+      var ch = _shifted ? k.toUpperCase() : k;
+      _activeInput.value += ch;
+      if (_shifted) { _shifted = false; updateShift(); }
+    }
+
+    function updateShift() {
+      document.querySelectorAll('.osk-key').forEach(function (b) {
+        var k = b.dataset.key;
+        if (!k || k.length !== 1 || !/[a-z]/.test(k)) return;
+        b.textContent = _shifted ? k.toUpperCase() : k;
+        b.classList.toggle('shift-active', _shifted);
+      });
+    }
+
+    function oskFocus(input) {
+      _activeInput = input;
+      // Scroll input into view above keyboard
+      setTimeout(function () { input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
+      document.getElementById('osk').classList.add('visible');
+    }
+
+    function oskHide() {
+      document.getElementById('osk').classList.remove('visible');
+      _activeInput = null;
+    }
+
+    // Wire up inputs — readonly so native keyboard doesn't appear; OSK handles typing
+    ['ssid-input', 'pw-input'].forEach(function (id) {
+      var el = document.getElementById(id);
+      el.addEventListener('click', function () { oskFocus(el); });
+      el.addEventListener('touchend', function (e) { e.preventDefault(); oskFocus(el); });
+    });
+
+    buildOsk();
+
+    /* ── Helpers ── */
     function signalBars(pct) {
       if (pct >= 75) return '▂▄▆█';
       if (pct >= 50) return '▂▄▆░';
