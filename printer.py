@@ -41,7 +41,6 @@ def print_order(order, tenant_info=None, reprint=False):
 
 
 def _print(p, order, tenant_info, reprint=False):
-    p._raw(b'\x1b!\x00')  # ESC ! 0x00 — reset all ESC ! modes (size, font) to normal
     metadata = order.get("metadata") or {}
     line_items = metadata.get("line_items") or []
     delivery_type = (order.get("delivery_type") or "collection").upper()
@@ -52,9 +51,9 @@ def _print(p, order, tenant_info, reprint=False):
     phone   = (tenant_info.get("restaurant_phone")   or "").strip()
 
     if name:
-        p.set(align="center", bold=True)
+        p.set(align="center", bold=True, double_height=True, double_width=False)
         p.text(f"{name}\n")
-        p.set(bold=False)
+        p.set(bold=False, double_height=False)
     if address:
         p.set(align="center")
         p.text(f"{address}\n")
@@ -65,9 +64,9 @@ def _print(p, order, tenant_info, reprint=False):
         p.text(f"{LINE}\n")
 
     # Order header
-    p.set(align="center", bold=True)
+    p.set(align="center", bold=True, double_height=True, double_width=True)
     p.text("REPRINT\n" if reprint else "NEW ORDER\n")
-    p.set(align="center", bold=False)
+    p.set(align="center", bold=False, double_height=False, double_width=False)
     p.text(f"Order #{order['woo_order_id']}\n")
     p.text(f"{LINE}\n")
 
@@ -78,7 +77,7 @@ def _print(p, order, tenant_info, reprint=False):
     if order.get("customer_phone"):
         p.text(f"{order['customer_phone']}\n")
 
-    # Delivery type + time
+    # Delivery type
     p.text("\n")
     p.set(bold=True)
     p.text(f"[{delivery_type}]\n")
@@ -86,17 +85,10 @@ def _print(p, order, tenant_info, reprint=False):
     if delivery_type == "DELIVERY" and order.get("delivery_address"):
         p.text(f"{order['delivery_address']}\n")
 
-    delivery_time = order.get("delivery_time") or _extract_delivery_time(metadata)
-    if delivery_time:
-        p.text("\n")
-        p.set(bold=True)
-        p.text(f"{delivery_time}\n")
-        p.set(bold=False)
-
     p.text(f"{LINE}\n")
 
     # Items
-    p.set(font="a", align="left", bold=False)
+    p.set(font="a", align="left", bold=False, double_height=False, double_width=False)
     if line_items:
         for item in line_items:
             qty = item.get("quantity", 1)
