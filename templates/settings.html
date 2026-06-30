@@ -170,12 +170,10 @@
 
       <label for="ssid-input">Network name (SSID)</label>
       <input type="text" id="ssid-input" autocomplete="off" autocorrect="off"
-             spellcheck="false" placeholder="e.g. MyRestaurant_WiFi"
-             onfocus="showKeyboard()" />
+             spellcheck="false" placeholder="e.g. MyRestaurant_WiFi" />
 
       <label for="pw-input">Password</label>
-      <input type="password" id="pw-input" autocomplete="off" placeholder="Leave blank if open network"
-             onfocus="showKeyboard()" />
+      <input type="password" id="pw-input" autocomplete="off" placeholder="Leave blank if open network" />
 
       <div class="btn-row">
         <button class="btn btn-green" id="connect-btn" onclick="connectWifi()">Connect</button>
@@ -276,10 +274,6 @@
           btn.textContent = 'Connect';
           setMsg('Request failed', false);
         });
-    };
-
-    window.showKeyboard = function () {
-      fetch('/api/keyboard/show', { method: 'POST' });
     };
 
     function signalBars(pct) {

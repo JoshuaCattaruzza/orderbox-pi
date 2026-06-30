@@ -252,16 +252,6 @@ def wifi_connect():
 
 
 
-@app.route("/api/keyboard/show", methods=["POST"])
-def keyboard_show():
-    r = subprocess.run(["pgrep", "-x", "onboard"], capture_output=True)
-    if r.returncode != 0:
-        env = os.environ.copy()
-        env["DISPLAY"] = ":0"
-        env.setdefault("XAUTHORITY", f"/home/{env.get('USER', 'pi')}/.Xauthority")
-        subprocess.Popen(["onboard", "--size=800x220"], env=env)
-    return jsonify({"visible": True})
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
