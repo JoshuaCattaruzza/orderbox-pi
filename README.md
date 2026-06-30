@@ -27,8 +27,6 @@ Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/) with these OS C
 
 ### 2. Boot and SSH in
 
-Insert the SD card, power on, then from your dev machine:
-
 ```bash
 ssh pi@orderbox.local
 ```
@@ -41,23 +39,17 @@ cd ~/orderbox-pi
 sudo bash scripts/install.sh
 ```
 
-The script will:
-- Install all system packages (autossh, cups, unclutter, xserver-xorg-video-fbdev, etc.)
-- Set up the Python venv
-- Auto-detect the SPI display framebuffer device (ILI9486)
-- Write `/etc/X11/xorg.conf` and `Xwrapper.config`
-- Configure the Chromium kiosk autostart
-- Generate the SSH tunnel key at `~/.ssh/orderbox_tunnel`
-- Enable the `orderbox-pi` and `orderbox-tunnel` systemd services
+The script installs system packages, sets up the Python venv, auto-detects the SPI display framebuffer (ILI9486, falls back to `/dev/fb1`), writes Xorg config, configures Chromium kiosk autostart via XDG, grants passwordless `nmcli` for WiFi management, generates the SSH tunnel key at `~/.ssh/orderbox_tunnel`, and enables both systemd services.
 
-At the end it will print a single `gcloud` command — copy it.
+At the end it prints a single `gcloud` command to authorise the tunnel key — copy it.
 
 ### 4. Authorise the tunnel key on the VM
 
-Run the command printed by the install script on your dev machine. It looks like:
+Run the printed command from your dev machine:
 
 ```bash
-gcloud compute ssh orderbox-wp-vm --zone=europe-west2-b --project=orderbox-487000 --command="echo 'ssh-ed25519 AAAA...' >> ~/.ssh/authorized_keys"
+gcloud compute ssh orderbox-wp-vm --zone=europe-west2-b --project=orderbox-487000 \
+  --command="echo 'ssh-ed25519 AAAA...' >> ~/.ssh/authorized_keys"
 ```
 
 ### 5. Edit `.env`
@@ -66,11 +58,14 @@ gcloud compute ssh orderbox-wp-vm --zone=europe-west2-b --project=orderbox-48700
 nano ~/orderbox-pi/.env
 ```
 
-Fill in:
-- `ORDERBOX_API_URL` — API base URL
-- `ORDERBOX_SUBDOMAIN` — restaurant subdomain
-- `ORDERBOX_PI_API_KEY` — Pi API key
-- `PRINTER_DEV` — printer device path (default `/dev/usb/lp0`)
+| Variable | Description |
+|---|---|
+| `ORDERBOX_API_URL` | API base URL (e.g. `https://orderbox-api-xxx.a.run.app`) |
+| `ORDERBOX_SUBDOMAIN` | Restaurant subdomain (must match `tenants.subdomain` in the DB) |
+| `ORDERBOX_PI_API_KEY` | Pi API key (must match `tenants.pi_api_key` in the DB) |
+| `PRINTER_DEV` | Printer device path (default `/dev/usb/lp0`) |
+| `POLL_INTERVAL` | Seconds between order polls (default `10`) |
+| `KIOSK_MODE` | Set to `true` on the Pi — disables cursor and text selection |
 
 ### 6. Start services and reboot
 
@@ -80,7 +75,7 @@ sudo systemctl start orderbox-pi.service
 sudo reboot
 ```
 
-Chromium should open automatically on the touchscreen after reboot.
+Chromium opens `http://localhost:5000` automatically on the touchscreen after reboot.
 
 ---
 
@@ -93,56 +88,94 @@ ORDERBOX_API_URL=http://localhost:3000 ORDERBOX_SUBDOMAIN=demo python main.py
 
 Dashboard at `http://localhost:5000`.
 
-## Configuration
+---
 
-All config is via environment variables (or a `.env` file):
+## Module-level state in Flask (`main.py`)
 
-| Variable | Default | Description |
-|---|---|---|
-| `ORDERBOX_API_URL` | `http://localhost:3000` | OrderBox API base URL. In Docker, use the container name e.g. `http://host.docker.internal:3000` |
-| `ORDERBOX_SUBDOMAIN` | `demo` | Tenant subdomain — must match the `subdomain` column in the API's `tenants` table |
-| `ORDERBOX_PI_API_KEY` | _(empty)_ | Optional. If the tenant has a `pi_api_key` set, include it here as `X-Api-Key` |
-| `PRINTER_DEV` | `/dev/usb/lp0` | USB device path for the thermal printer |
-| `POLL_INTERVAL` | `10` | Seconds between order polls |
-| `KIOSK_MODE` | `false` | Set to `true` on the Pi — disables cursor, text selection, and enables touch scroll |
+Two flags are initialised at startup and included in every `/api/orders` response, keeping the dashboard JS in sync without extra round trips:
 
-## State managed in Flask (`main.py`)
+**`_paused`** — whether ordering is paused. Loaded from `GET /public/:subdomain/status` on startup, updated immediately when the operator hits Pause/Resume.
 
-Flask maintains two module-level flags that are included in every `/api/orders` response so the dashboard JS stays in sync on every 5-second poll:
+**`_wc_auth_error`** — whether WooCommerce credentials are failing. Loaded from `GET /pi/:subdomain/info` on startup, then refreshed every 60 seconds via a background `threading.Timer`. The 60s poll ensures the banner clears shortly after the operator fixes the API keys, without waiting for the next order action.
 
-### `_paused`
-Whether ordering is currently paused. Initialised from `GET /public/:subdomain/status` on startup. Updated when the operator hits the Pause/Resume button. Included in `/api/orders` as `paused`.
+**`_tenant_info`** — restaurant name, address, phone. Also refreshed every 60s. Used as the receipt header.
 
-### `_wc_auth_error`
-Whether the API's WooCommerce credentials are failing. Initialised from `GET /pi/:subdomain/info` on startup, then refreshed every 60 seconds via a background timer. Included in `/api/orders` as `wc_auth_error`.
-
-**Why poll every 60s for the auth error?** The flag is set by the API when a WC call returns 401, but it's cleared by the API when a subsequent WC call succeeds. Since successful WC calls happen on order actions (accept, decline, complete), they're infrequent. The 60s background poll ensures the banner clears within a minute of the keys being fixed — without waiting for the next order action.
+---
 
 ## Dashboard behaviours
 
-### Pause / resume
-The header contains a Pause button. Tapping it shows a confirm modal (pausing affects all customers). Resume is immediate with no confirm — it's always safe. Both actions call `/api/pause` and `/api/resume` on Flask, which proxy to the API.
+### Live tab
+Two columns: Incoming (NEW orders) and In Prep (ACCEPTED + PRINTED). The dashboard polls `/api/orders` every 5 seconds.
 
-### WooCommerce auth error banner
-When `wc_auth_error` is `true`, a red banner appears below the header:
-> ⚠ WooCommerce connection error — API keys may be invalid. Update them in WooCommerce → Settings → Advanced → REST API.
-
-The banner is **non-dismissable** — it stays until the API clears the flag. This is intentional: a silent WC auth failure means order status updates, notes, and refunds are all failing. The operator must fix the keys.
-
-To fix: go to WooCommerce → Settings → Advanced → REST API, revoke the old key, create a new one, and update `woo_consumer_key` / `woo_consumer_secret` in the `tenants` table on the API's Postgres instance.
-
-### Decline flow
-Tapping Decline opens a confirm modal (irreversible, triggers a refund). On confirm, the API attempts a WooCommerce refund:
-- Card payments: Stripe refund via `api_refund: true`
-- COD: falls back to plain cancel (no money to refund)
-- If the refund fails: Flask receives a 502 and the dashboard shows an error modal — **the operator must not decline until the refund issue is resolved**
+### History tab
+Fetches COMPLETED and CANCELLED orders from the API on tab switch. Each card shows status badge, timestamps, line items, and a Reprint button.
 
 ### Accept flow
-Tapping Accept opens an ETA picker (10 / 15 / 20 / 25 / 30 / 45 min). On selection, the API sends the ETA as a customer-facing WooCommerce order note, then the Pi prints the receipt. If printing fails, a modal prompts the operator to reprint manually.
+Tapping Accept opens an ETA picker (10 / 15 / 20 / 25 / 30 / 45 min). On selection:
+1. API transitions `NEW → ACCEPTED` and posts an ETA note to the WooCommerce order (customer-visible)
+2. Flask immediately prints the receipt
+3. Flask calls `mark_printed` to transition `ACCEPTED → PRINTED`
+4. If printing fails, `print_ok: false` is returned and a modal prompts the operator to use the Reprint button
 
-### print_ok
-Every accept response includes `print_ok: true/false`. If `false`, the order is still accepted on the API side — only the print failed. A modal directs the operator to use the Reprint button on the card.
+### Decline flow
+Opens a confirm modal (irreversible — triggers a refund). On confirm:
+- Card payments: Stripe refund via WooCommerce `api_refund: true`
+- COD orders: plain WooCommerce cancel (no money to refund)
+- If the refund call fails: Flask receives 502 and shows an error modal — **the operator must not proceed until the issue is resolved**
 
-## Printer
+### Complete flow
+Opens a confirm modal, then transitions `PRINTED → COMPLETED` and marks the order completed in WooCommerce.
 
-`printer.py` writes ESC/POS commands directly to `PRINTER_DEV`. If the device is absent (local dev), printing fails gracefully — `print_ok` is `false` and the order still transitions. The Reprint button on every In Prep card re-sends the print job.
+### Reprint
+Available on every In Prep card and History card. Uses cached order data from `_orderData` (populated during polling). Calls `printer.py` with `reprint=True`, which prints `REPRINT` instead of `NEW ORDER` as the header.
+
+### Pause / resume
+Pause shows a confirm modal (affects all customers). Resume is immediate with no confirm. Both proxy to the OrderBox API, which propagates to WordPress within 30s.
+
+### WooCommerce auth error banner
+When `wc_auth_error` is true, a non-dismissable red banner appears below the header. It clears automatically once the API keys are fixed and any WC call succeeds.
+
+To fix: WooCommerce → Settings → Advanced → REST API → revoke the old key, generate a new one, update `woo_consumer_key` and `woo_consumer_secret` in the `tenants` table.
+
+### WiFi settings (`/settings`)
+A separate page (accessible via the gear icon) lets the operator scan for networks, select one, enter a password via the embedded on-screen keyboard, and connect — all without a physical keyboard. Uses `nmcli` via Flask API endpoints (`/api/wifi/status`, `/api/wifi/networks`, `/api/wifi/connect`). The `pi` user has passwordless `nmcli` via `/etc/sudoers.d/orderbox-nmcli`.
+
+---
+
+## Printer (`printer.py`)
+
+Writes ESC/POS directly to `PRINTER_DEV` via `python-escpos`. The receipt layout:
+
+1. **Restaurant header** — name (bold, centred), address (split by comma, one line each), phone, separator line
+2. **Order header** — `NEW ORDER` or `REPRINT` (double height/width), order number
+3. **Customer** — name and phone
+4. **Order type** — `[COLLECTION]` or `[DELIVERY]`. For delivery: full shipping address (line 1, line 2, city, postcode)
+5. **Delivery time** — if present, date and time slot printed on separate bold lines (from WooCommerce meta keys `Delivery Date` and `_orddd_time_slot`)
+6. **Items** — Font B (smaller, fits more dish name). Each item: `qty x name` right-aligned to `£price`. One blank line between items.
+7. **Total** — Font B bold, right-aligned
+8. **Payment** — `** PAID ONLINE **` (card) or `** CASH ON DELIVERY **` with collect amount
+9. **Customer note** — if present
+10. Three blank lines + cut
+
+Constants: `PAPER_WIDTH = 24` (Font A), `PAPER_WIDTH_B = 32` (Font B). `_blen()` is used for byte-length calculations (£ = 2 UTF-8 bytes).
+
+If `PRINTER_DEV` is absent (local dev), printing fails gracefully — `print_ok` is false but the order still transitions.
+
+---
+
+## SSH tunnel
+
+The Pi maintains a persistent reverse SSH tunnel to the VM:
+
+```
+Pi → autossh → josh@34.89.22.14 port 2222 → Pi SSH port 22
+```
+
+This lets you SSH to the Pi from anywhere by hopping through the VM:
+
+```bash
+gcloud compute ssh orderbox-wp-vm --zone=europe-west2-b -- \
+  ssh -p 2222 pi@localhost
+```
+
+The tunnel is managed by `systemd/orderbox-tunnel.service` using `autossh` with keepalives every 30s.
