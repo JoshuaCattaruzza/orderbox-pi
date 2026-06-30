@@ -5,7 +5,8 @@ log = logging.getLogger(__name__)
 
 PAPER_WIDTH   = 24  # Font A confirmed on physical printer
 PAPER_WIDTH_B = 32  # Font B estimate (smaller chars, more per line)
-LINE = "─" * PAPER_WIDTH
+LINE   = "─" * PAPER_WIDTH
+LINE_B = "─" * PAPER_WIDTH_B
 
 
 def _blen(s):
@@ -129,12 +130,12 @@ def _print(p, order, tenant_info, reprint=False):
     else:
         p.text("(no item details)\n")
 
-    p.text(f"{LINE}\n")
+    p.text(f"{LINE_B}\n")
 
-    # Total
-    p.set(bold=True)
-    p.text(format_line("TOTAL", f"£{order.get('total_amount') or '0.00'}") + "\n")
-    p.set(bold=False)
+    # Total — stay in Font B to match item list width
+    p.set(font="b", bold=True)
+    p.text(format_line("TOTAL", f"£{order.get('total_amount') or '0.00'}", width=PAPER_WIDTH_B) + "\n")
+    p.set(font="b", bold=False)
 
     # Payment method
     payment = (order.get("payment_method") or metadata.get("payment_method") or "").lower()
