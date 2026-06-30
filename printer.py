@@ -51,9 +51,9 @@ def _print(p, order, tenant_info, reprint=False):
     phone   = (tenant_info.get("restaurant_phone")   or "").strip()
 
     if name:
-        p.set(align="center", bold=True, double_height=True, double_width=False)
+        p.set(align="center", bold=True)
         p.text(f"{name}\n")
-        p.set(bold=False, double_height=False)
+        p.set(bold=False)
     if address:
         p.set(align="center")
         p.text(f"{address}\n")
@@ -72,6 +72,7 @@ def _print(p, order, tenant_info, reprint=False):
 
     # Customer
     p.set(align="left", bold=True)
+    p.text("[CUSTOMER]\n")
     p.text(f"{order.get('customer_name') or 'Unknown'}\n")
     p.set(bold=False)
     if order.get("customer_phone"):
@@ -88,6 +89,8 @@ def _print(p, order, tenant_info, reprint=False):
     meta_data = metadata.get("meta_data") or []
     delivery_date = next((m["value"] for m in meta_data if m.get("key") == "Delivery Date"), None)
     delivery_slot = next((m["value"] for m in meta_data if m.get("key") == "_orddd_time_slot"), None)
+    if delivery_date or delivery_slot:
+        p.text("\n")
     if delivery_date:
         p.set(bold=True)
         p.text(f"DATE: {delivery_date}\n")
