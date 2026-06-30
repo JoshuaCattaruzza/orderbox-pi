@@ -24,9 +24,9 @@ def format_line(left, right, width=PAPER_WIDTH):
 
 def _extract_delivery_time(metadata):
     meta_data = metadata.get("meta_data") or []
-    time_slot = next((m["value"] for m in meta_data if m.get("key") == "_time_slot"), None)
-    date      = next((m["value"] for m in meta_data if m.get("key") == "_order_delivery_date"), None)
-    if time_slot and date: return f"{date} {time_slot}"
+    time_slot = next((m["value"] for m in meta_data if m.get("key") == "_orddd_time_slot"), None)
+    date      = next((m["value"] for m in meta_data if m.get("key") == "Delivery Date"), None)
+    if date and time_slot: return f"{date} - {time_slot}"
     return time_slot or date or None
 
 
@@ -51,9 +51,9 @@ def _print(p, order, tenant_info, reprint=False):
     phone   = (tenant_info.get("restaurant_phone")   or "").strip()
 
     if name:
-        p.set(align="center", bold=True, double_height=True, double_width=False)
+        p.set(align="center", bold=True)
         p.text(f"{name}\n")
-        p.set(bold=False, double_height=False)
+        p.set(bold=False)
     if address:
         p.set(align="center")
         p.text(f"{address}\n")
@@ -64,9 +64,9 @@ def _print(p, order, tenant_info, reprint=False):
         p.text(f"{LINE}\n")
 
     # Order header
-    p.set(align="center", bold=True, double_height=True, double_width=True)
+    p.set(align="center", bold=True)
     p.text("REPRINT\n" if reprint else "NEW ORDER\n")
-    p.set(align="center", bold=False, double_height=False, double_width=False)
+    p.set(align="center", bold=False)
     p.text(f"Order #{order['woo_order_id']}\n")
     p.text(f"{LINE}\n")
 
@@ -88,9 +88,9 @@ def _print(p, order, tenant_info, reprint=False):
     delivery_time = order.get("delivery_time") or _extract_delivery_time(metadata)
     if delivery_time:
         p.text("\n")
-        p.set(bold=True, double_height=True)
+        p.set(bold=True)
         p.text(f"{delivery_time}\n")
-        p.set(bold=False, double_height=False)
+        p.set(bold=False)
 
     p.text(f"{LINE}\n")
 
