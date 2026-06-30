@@ -278,12 +278,8 @@
         });
     };
 
-    var _kbVisible = false;
     window.showKeyboard = function () {
-      if (_kbVisible) return;
-      fetch('/api/keyboard/toggle', { method: 'POST' })
-        .then(function (r) { return r.json(); })
-        .then(function (d) { _kbVisible = d.visible; });
+      fetch('/api/keyboard/show', { method: 'POST' });
     };
 
     function signalBars(pct) {
