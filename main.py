@@ -13,6 +13,12 @@ log = logging.getLogger(__name__)
 app = Flask(__name__)
 poller = OrderPoller()
 
+
+@app.after_request
+def no_cache(response):
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
 _tenant_info = {}
 _wc_auth_error = False
 try:
@@ -253,7 +259,8 @@ def keyboard_toggle():
         return jsonify({"visible": False})
     else:
         env = os.environ.copy()
-        env.setdefault("DISPLAY", ":0")
+        env["DISPLAY"] = ":0"
+        env.setdefault("XAUTHORITY", f"/home/{env.get('USER', 'pi')}/.Xauthority")
         subprocess.Popen(["onboard", "--size=800x220"], env=env)
         return jsonify({"visible": True})
 
