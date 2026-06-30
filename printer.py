@@ -85,10 +85,16 @@ def _print(p, order, tenant_info, reprint=False):
     if delivery_type == "DELIVERY" and order.get("delivery_address"):
         p.text(f"{order['delivery_address']}\n")
 
-    delivery_time = order.get("delivery_time") or _extract_delivery_time(metadata)
-    if delivery_time:
+    meta_data = metadata.get("meta_data") or []
+    delivery_date = next((m["value"] for m in meta_data if m.get("key") == "Delivery Date"), None)
+    delivery_slot = next((m["value"] for m in meta_data if m.get("key") == "_orddd_time_slot"), None)
+    if delivery_date:
         p.set(bold=True)
-        p.text(f"{delivery_time}\n")
+        p.text(f"DATE: {delivery_date}\n")
+        p.set(bold=False)
+    if delivery_slot:
+        p.set(bold=True)
+        p.text(f"TIME: {delivery_slot}\n")
         p.set(bold=False)
 
     p.text(f"{LINE}\n")
