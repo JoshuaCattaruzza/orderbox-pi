@@ -101,7 +101,7 @@ Exec=onboard
 Hidden=false
 X-GNOME-Autostart-enabled=true
 EOF
-DISPLAY=:0 dbus-launch gsettings set org.onboard.auto-show enabled true 2>/dev/null || true
+DISPLAY=:0 dbus-launch gsettings set org.onboard.auto-show enabled false 2>/dev/null || true
 
 echo "==> Granting passwordless nmcli for WiFi management"
 echo "$INSTALL_USER ALL=(ALL) NOPASSWD: /usr/bin/nmcli" | sudo tee /etc/sudoers.d/orderbox-nmcli > /dev/null

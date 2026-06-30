@@ -253,5 +253,16 @@ def wifi_connect():
 
 
 
+@app.route("/api/keyboard/show", methods=["POST"])
+def keyboard_show():
+    env = os.environ.copy()
+    env["DISPLAY"] = ":0"
+    env.setdefault("XAUTHORITY", f"/home/{env.get('USER', 'pi')}/.Xauthority")
+    # If onboard is already running this signals the existing instance to show.
+    # If not running it spawns a new one.
+    subprocess.Popen(["onboard", "--size=800x220"], env=env)
+    return jsonify({"visible": True})
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
