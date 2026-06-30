@@ -23,7 +23,7 @@
   --text:       #e8e8f0;
   --muted:      #6b6b8a;
   --radius:     12px;
-  --header-h:   70px;
+  --header-h:   90px;
 }
 
 html, body {
@@ -33,7 +33,13 @@ html, body {
   color: var(--text);
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 17px;
-  /* cursor: none; */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input, textarea, [contenteditable] {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* ── Header ── */
@@ -54,20 +60,20 @@ header {
 }
 
 .tab-btn {
-  padding: 14px 32px;
+  padding: 16px 36px;
   background: none;
   border: none;
   border-radius: 8px;
   color: var(--muted);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 1rem;
   letter-spacing: 1px;
   text-transform: uppercase;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  min-height: 48px;
+  min-height: 60px;
 }
 
 .tab-btn.active {
@@ -82,7 +88,7 @@ header {
 }
 
 .logo {
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
   color: var(--green);
@@ -90,7 +96,7 @@ header {
 
 .settings-link {
   color: var(--muted);
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   text-decoration: none;
   line-height: 1;
   display: flex;
@@ -98,8 +104,8 @@ header {
   transition: color 0.15s;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  min-height: 48px;
-  min-width: 48px;
+  min-height: 64px;
+  min-width: 64px;
   justify-content: center;
 }
 .settings-link:hover { color: var(--text); }
@@ -501,20 +507,20 @@ main.columns {
 
 /* ── Pause button ── */
 .btn-pause {
-  padding: 14px 22px;
+  padding: 16px 26px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.05);
   color: var(--muted);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 1rem;
   letter-spacing: 0.5px;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
   white-space: nowrap;
-  min-height: 48px;
+  min-height: 60px;
 }
 
 .btn-pause:active { opacity: 0.75; }

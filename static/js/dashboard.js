@@ -292,7 +292,17 @@ function declineOrder(id, btn) {
   showDeclineConfirm(id, btn);
 }
 
-async function completeOrder(id, btn) {
+function completeOrder(id, btn) {
+  showCompleteConfirm(id, btn);
+}
+
+function reprintOrder(id, btn) {
+  showReprintConfirm(id, btn);
+}
+
+async function doComplete(id) {
+  const btn = _pendingBtn;
+  closeModal();
   lockCard(btn, 'Completing…');
   try {
     await post(`/api/orders/${id}/complete`);
@@ -302,7 +312,9 @@ async function completeOrder(id, btn) {
   }
 }
 
-async function reprintOrder(id, btn) {
+async function doReprint(id) {
+  const btn = _pendingBtn;
+  closeModal();
   btn.disabled = true;
   btn.textContent = 'Printing…';
   try {
@@ -428,6 +440,70 @@ function showDeclineConfirm(id, btn) {
   actions.appendChild(confirmBtn);
   box.appendChild(title);
   box.appendChild(sub);
+  box.appendChild(actions);
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function showCompleteConfirm(id, btn) {
+  _pendingBtn = btn;
+  const order = _orderData.get(id);
+  const wooId = order ? order.woo_order_id : '';
+
+  const box = document.getElementById('modal-box');
+  box.innerHTML = '';
+
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.textContent = `Complete order #${wooId}?`;
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-secondary';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = closeModal;
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'btn btn-complete';
+  confirmBtn.textContent = 'Yes, Complete';
+  confirmBtn.onclick = () => doComplete(id);
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(confirmBtn);
+  box.appendChild(title);
+  box.appendChild(actions);
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function showReprintConfirm(id, btn) {
+  _pendingBtn = btn;
+  const order = _orderData.get(id);
+  const wooId = order ? order.woo_order_id : '';
+
+  const box = document.getElementById('modal-box');
+  box.innerHTML = '';
+
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.textContent = `Reprint order #${wooId}?`;
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-secondary';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = closeModal;
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'btn btn-accept';
+  confirmBtn.textContent = 'Yes, Reprint';
+  confirmBtn.onclick = () => doReprint(id);
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(confirmBtn);
+  box.appendChild(title);
   box.appendChild(actions);
   document.getElementById('modal-overlay').classList.remove('hidden');
 }
