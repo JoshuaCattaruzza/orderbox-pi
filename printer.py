@@ -22,6 +22,14 @@ def format_line(left, right, width=PAPER_WIDTH):
     return left + " " * gap + right
 
 
+def _extract_delivery_time(metadata):
+    meta_data = metadata.get("meta_data") or []
+    time_slot = next((m["value"] for m in meta_data if m.get("key") == "_time_slot"), None)
+    date      = next((m["value"] for m in meta_data if m.get("key") == "_order_delivery_date"), None)
+    if time_slot and date: return f"{date} {time_slot}"
+    return time_slot or date or None
+
+
 def print_order(order, tenant_info=None, reprint=False):
     from escpos.printer import File
 
@@ -69,13 +77,20 @@ def _print(p, order, tenant_info, reprint=False):
     if order.get("customer_phone"):
         p.text(f"{order['customer_phone']}\n")
 
-    # Delivery type
+    # Delivery type + time
     p.text("\n")
     p.set(bold=True)
     p.text(f"[{delivery_type}]\n")
     p.set(bold=False)
     if delivery_type == "DELIVERY" and order.get("delivery_address"):
         p.text(f"{order['delivery_address']}\n")
+
+    delivery_time = order.get("delivery_time") or _extract_delivery_time(metadata)
+    if delivery_time:
+        p.text("\n")
+        p.set(bold=True, double_height=True)
+        p.text(f"{delivery_time}\n")
+        p.set(bold=False, double_height=False)
 
     p.text(f"{LINE}\n")
 

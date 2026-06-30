@@ -215,6 +215,11 @@ function cardHistory(order) {
 }
 
 // ── Card templates ─────────────────────────────────────────────────────────
+function deliveryTimeBadge(time) {
+  if (!time) return '';
+  return `<div class="delivery-time">&#128337; ${time}</div>`;
+}
+
 function badge(type) {
   const t = (type || 'collection').toLowerCase();
   return `<span class="badge ${t}">${t}</span>`;
@@ -246,6 +251,7 @@ function cardNew(order) {
   <div class="customer-name">${order.customer_name || 'Customer'}</div>
   ${order.customer_phone ? `<div class="customer-phone">${order.customer_phone}</div>` : ''}
   ${order.delivery_type === 'delivery' && order.delivery_address ? `<div class="address">${order.delivery_address}</div>` : ''}
+  ${deliveryTimeBadge(order.delivery_time)}
   ${itemsList(order)}
   ${noteBlock(order)}
   <div class="order-total">£${order.total_amount}</div>
@@ -267,6 +273,7 @@ function cardPrep(order) {
     ${badge(order.delivery_type)}
   </div>
   <div class="customer-name">${order.customer_name || 'Customer'}</div>
+  ${deliveryTimeBadge(order.delivery_time)}
   ${itemsList(order)}
   ${noteBlock(order)}
   <div class="order-total">£${order.total_amount}</div>
