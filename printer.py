@@ -3,7 +3,8 @@ from config import PRINTER_DEV
 
 log = logging.getLogger(__name__)
 
-PAPER_WIDTH = 24  # actual printable width confirmed on physical printer
+PAPER_WIDTH   = 24  # Font A confirmed on physical printer
+PAPER_WIDTH_B = 32  # Font B estimate (smaller chars, more per line)
 LINE = "─" * PAPER_WIDTH
 
 
@@ -93,17 +94,17 @@ def _print(p, order, tenant_info, reprint=False):
         p.text("\n")
     if delivery_date:
         p.set(bold=True)
-        p.text(f"DATE: {delivery_date}\n")
+        p.text(f"{delivery_date}\n")
         p.set(bold=False)
     if delivery_slot:
         p.set(bold=True)
-        p.text(f"TIME: {delivery_slot}\n")
+        p.text(f"{delivery_slot}\n")
         p.set(bold=False)
 
     p.text(f"{LINE}\n")
 
-    # Items
-    p.set(font="a", align="left", bold=False, double_height=False, double_width=False)
+    # Items — Font B for smaller text so more of the dish name is readable
+    p.set(font="b", align="left", bold=False)
     if line_items:
         for item in line_items:
             qty = item.get("quantity", 1)
@@ -111,7 +112,7 @@ def _print(p, order, tenant_info, reprint=False):
             total = item.get("total", "")
             left = f"{qty}x {item_name}"
             right = f"£{total}" if total else ""
-            p.text(format_line(left, right) + "\n")
+            p.text(format_line(left, right, width=PAPER_WIDTH_B) + "\n")
             p.text("\n")
     else:
         p.text("(no item details)\n")
