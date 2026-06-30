@@ -1,5 +1,6 @@
 import logging
 import os
+import subprocess
 from flask import Flask, render_template, jsonify, request
 from requests.exceptions import HTTPError
 from poller import OrderPoller
@@ -163,6 +164,98 @@ def reprint(order_id):
     except Exception as e:
         log.exception("Reprint failed for order %s", order_id)
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/settings")
+def settings():
+    return render_template("settings.html")
+
+
+@app.route("/api/wifi/status")
+def wifi_status():
+    try:
+        r = subprocess.run(
+            ["nmcli", "-t", "-f", "TYPE,STATE,CONNECTION", "dev"],
+            capture_output=True, text=True, timeout=5
+        )
+        for line in r.stdout.strip().split("\n"):
+            parts = line.split(":")
+            if len(parts) >= 3 and parts[0] == "wifi":
+                conn = parts[2] if parts[2] not in ("--", "") else None
+                return jsonify({"state": parts[1], "connection": conn})
+        return jsonify({"state": "unknown", "connection": None})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/wifi/networks")
+def wifi_networks():
+    try:
+        r = subprocess.run(
+            ["sudo", "nmcli", "--escape", "yes", "-t", "-f", "SSID,SIGNAL,SECURITY",
+             "dev", "wifi", "list", "--rescan", "yes"],
+            capture_output=True, text=True, timeout=20
+        )
+        networks = []
+        seen = set()
+        for line in r.stdout.strip().split("\n"):
+            if not line:
+                continue
+            # SSID may contain ':'; SIGNAL and SECURITY never do — split from right
+            parts = line.split(":")
+            if len(parts) < 3:
+                continue
+            security = parts[-1]
+            signal_str = parts[-2]
+            ssid = ":".join(parts[:-2])
+            if not ssid or ssid in seen:
+                continue
+            seen.add(ssid)
+            try:
+                signal = int(signal_str)
+            except ValueError:
+                signal = 0
+            networks.append({"ssid": ssid, "signal": signal, "security": security})
+        networks.sort(key=lambda x: x["signal"], reverse=True)
+        return jsonify({"networks": networks})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/wifi/connect", methods=["POST"])
+def wifi_connect():
+    data = request.get_json(silent=True) or {}
+    ssid = data.get("ssid", "").strip()
+    password = data.get("password", "").strip()
+    if not ssid:
+        return jsonify({"error": "SSID required"}), 400
+    try:
+        cmd = ["sudo", "nmcli", "dev", "wifi", "connect", ssid]
+        if password:
+            cmd += ["password", password]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if r.returncode == 0:
+            return jsonify({"ok": True})
+        else:
+            msg = (r.stderr or r.stdout).strip()
+            return jsonify({"ok": False, "error": msg}), 400
+    except subprocess.TimeoutExpired:
+        return jsonify({"ok": False, "error": "Connection timed out"}), 408
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/keyboard/toggle", methods=["POST"])
+def keyboard_toggle():
+    r = subprocess.run(["pgrep", "-x", "onboard"], capture_output=True)
+    if r.returncode == 0:
+        subprocess.run(["pkill", "-x", "onboard"])
+        return jsonify({"visible": False})
+    else:
+        env = os.environ.copy()
+        env.setdefault("DISPLAY", ":0")
+        subprocess.Popen(["onboard", "--size=800x220"], env=env)
+        return jsonify({"visible": True})
 
 
 if __name__ == "__main__":

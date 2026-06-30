@@ -10,7 +10,7 @@ SSH_KEY="/home/$INSTALL_USER/.ssh/orderbox_tunnel"
 echo "==> Installing system packages"
 sudo apt update -q
 sudo apt install -y python3-pip python3-venv autossh libusb-1.0-0 cups unclutter \
-  xserver-xorg-video-fbdev xserver-xorg-legacy
+  xserver-xorg-video-fbdev xserver-xorg-legacy onboard at-spi2-core
 
 echo "==> Creating Python virtual environment"
 python3 -m venv "$REPO_DIR/venv"
@@ -89,6 +89,10 @@ Exec=chromium --kiosk --noerrdialogs --disable-infobars --no-first-run --window-
 Hidden=false
 X-GNOME-Autostart-enabled=true
 EOF
+
+echo "==> Granting passwordless nmcli for WiFi management"
+echo "$INSTALL_USER ALL=(ALL) NOPASSWD: /usr/bin/nmcli" | sudo tee /etc/sudoers.d/orderbox-nmcli > /dev/null
+sudo chmod 440 /etc/sudoers.d/orderbox-nmcli
 
 echo "==> Generating SSH tunnel key"
 mkdir -p "/home/$INSTALL_USER/.ssh"
