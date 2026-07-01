@@ -130,6 +130,11 @@ def _print(p, order, tenant_info, reprint=False):
     else:
         p.text("(no item details)\n")
 
+    shipping_total = metadata.get("shipping_total", "")
+    if delivery_type == "DELIVERY" and shipping_total and float(shipping_total or 0) > 0:
+        p.text(format_line("Delivery", f"£{shipping_total}", width=PAPER_WIDTH_B) + "\n")
+        p.text("\n")
+
     p.text(f"{LINE_B}\n")
 
     # Total — stay in Font B to match item list width
