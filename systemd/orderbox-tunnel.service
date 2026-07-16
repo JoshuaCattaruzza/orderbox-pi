@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 User=pi
-ExecStart=/usr/bin/autossh -M 0 -N \
+ExecStart=/usr/local/bin/autossh -M 0 -N \
   -o ServerAliveInterval=30 \
   -o ServerAliveCountMax=3 \
   -o ExitOnForwardFailure=yes \

@@ -5,6 +5,7 @@ from flask import Flask, render_template, jsonify, request
 from requests.exceptions import HTTPError
 from poller import OrderPoller
 from printer import print_order
+from notifier import play_notification
 import api_client
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -39,6 +40,7 @@ except Exception:
 @poller.on_new_order
 def _on_new_order(order):
     log.info("New order: #%s from %s", order["woo_order_id"], order.get("customer_name"))
+    play_notification()
 
 
 poller.start()
