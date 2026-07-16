@@ -17,7 +17,8 @@ sudo raspi-config nonint do_boot_behaviour B4
 echo "==> Installing system packages"
 sudo apt update -q
 sudo apt install -y python3-pip python3-venv autossh libusb-1.0-0 cups unclutter \
-  xserver-xorg-video-fbdev xserver-xorg-legacy at
+  xserver-xorg-video-fbdev xserver-xorg-legacy at \
+  alsa-utils espeak sox mpg123
 
 echo "==> Creating Python virtual environment"
 python3 -m venv "$REPO_DIR/venv"
@@ -33,11 +34,41 @@ fi
 echo "==> Adding $INSTALL_USER to lp group (printer access)"
 sudo usermod -a -G lp "$INSTALL_USER"
 
+echo "==> Configuring audio boot overlay (MAX98357A I2S DAC)"
+CONFIG_TXT="/boot/firmware/config.txt"
+REBOOT_REQUIRED=""
+if [ -f "$CONFIG_TXT" ]; then
+  sudo cp "$CONFIG_TXT" "$CONFIG_TXT.orderbox-bak"
+  # Remove any conflicting onboard-audio-enable line before adding audio=off
+  sudo sed -i '/^dtparam=audio=on/d' "$CONFIG_TXT"
+  ADDED=""
+  for line in "dtoverlay=vc4-kms-v3d" "dtoverlay=hifiberry-dac" "dtparam=audio=off"; do
+    if ! grep -qxF "$line" "$CONFIG_TXT"; then
+      echo "$line" | sudo tee -a "$CONFIG_TXT" > /dev/null
+      ADDED="$ADDED $line;"
+    fi
+  done
+  if [ -n "$ADDED" ]; then
+    echo "    Added to config.txt:$ADDED"
+    echo "    (backup saved at $CONFIG_TXT.orderbox-bak)"
+    REBOOT_REQUIRED=1
+  else
+    echo "    Already configured"
+  fi
+else
+  echo "    WARNING: $CONFIG_TXT not found — configure the hifiberry-dac and vc4-kms-v3d overlays manually"
+fi
+
 echo "==> Installing systemd services"
-sudo cp "$REPO_DIR/systemd/orderbox-pi.service"     /etc/systemd/system/
-sudo cp "$REPO_DIR/systemd/orderbox-tunnel.service" /etc/systemd/system/
+sudo cp "$REPO_DIR/systemd/orderbox-pi.service"          /etc/systemd/system/
+sudo cp "$REPO_DIR/systemd/orderbox-tunnel.service"      /etc/systemd/system/
+sudo cp "$REPO_DIR/systemd/orderbox-audio-setup.service" /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable orderbox-pi.service
+sudo systemctl enable orderbox-audio-setup.service
+
+echo "==> Detecting audio card now (best-effort — only works if the overlay is already active)"
+sudo bash "$REPO_DIR/scripts/detect-audio-card.sh" || true
 
 echo "==> Detecting SPI display framebuffer device"
 FB_DEV=""
@@ -142,4 +173,13 @@ echo "3. Then on the Pi:"
 echo "       sudo systemctl start orderbox-tunnel.service"
 echo "       sudo systemctl start orderbox-pi.service"
 echo ""
-echo "4. Reboot and confirm Chromium opens automatically"
+echo "4. Wire the MAX98357A I2S amp breakout to the GPIO header before first boot:"
+echo "       VIN->5V(pin2/4)  GND->any GND  BCLK->GPIO18(pin12)"
+echo "       LRC->GPIO19(pin35)  DIN->GPIO21(pin40)  GAIN->3.3V(pin1)  SD->3.3V(pin17)"
+echo ""
+if [ -n "$REBOOT_REQUIRED" ]; then
+  echo "5. REBOOT REQUIRED — audio overlay lines were just added to config.txt"
+  echo "       sudo reboot"
+else
+  echo "5. Reboot and confirm Chromium opens automatically"
+fi
