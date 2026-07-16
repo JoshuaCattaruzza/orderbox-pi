@@ -291,6 +291,13 @@ function lockCard(btn, label) {
   btn.textContent = label;
 }
 
+// renderList() only replaces cards it doesn't already recognise by id, so a
+// card left disabled/mid-label by a failed action never gets refreshed on
+// the next poll. Remove it so the next render rebuilds it from scratch.
+function unstickCard(btn) {
+  btn.closest('.order-card')?.remove();
+}
+
 function acceptOrder(id, btn) {
   showEtaModal(id, btn);
 }
@@ -314,8 +321,10 @@ async function doComplete(id) {
   try {
     await post(`/api/orders/${id}/complete`);
     await fetchOrders();
-  } catch {
-    fetchOrders();
+  } catch (e) {
+    unstickCard(btn);
+    await fetchOrders();
+    showModal(e.message || 'Failed to complete order. Please try again.');
   }
 }
 
@@ -555,8 +564,10 @@ async function confirmAccept(id, etaMinutes) {
     const res = await post(`/api/orders/${id}/accept`, { eta_minutes: etaMinutes });
     if (!res.print_ok) showModal('Printer error — receipt not printed. Please reprint manually.');
     await fetchOrders();
-  } catch {
-    fetchOrders();
+  } catch (e) {
+    unstickCard(btn);
+    await fetchOrders();
+    showModal(e.message || 'Failed to accept order. Please try again.');
   }
 }
 
@@ -569,13 +580,18 @@ async function confirmDecline(id) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
-    if (res.status === 502) {
+    if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      showModal(data.error || 'Refund failed — contact Orderbox support before declining.');
+      unstickCard(btn);
+      await fetchOrders();
+      showModal(data.error || `Failed to decline order (${res.status}). Please try again.`);
+      return;
     }
     await fetchOrders();
-  } catch {
-    fetchOrders();
+  } catch (e) {
+    unstickCard(btn);
+    await fetchOrders();
+    showModal(e.message || 'Failed to decline order. Please try again.');
   }
 }
 
@@ -587,6 +603,11 @@ function post(url, body, timeoutMs = 20000) {
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
     signal: controller.signal,
-  }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .finally(() => clearTimeout(timer));
+  }).then(async r => {
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || `Request failed (${r.status})`);
+    return data;
+  }).catch(e => {
+    throw e.name === 'AbortError' ? new Error('Request timed out. Please try again.') : e;
+  }).finally(() => clearTimeout(timer));
 }
