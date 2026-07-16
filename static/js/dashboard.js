@@ -579,10 +579,14 @@ async function confirmDecline(id) {
   }
 }
 
-function post(url, body) {
+function post(url, body, timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   return fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
-  }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+    signal: controller.signal,
+  }).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .finally(() => clearTimeout(timer));
 }
