@@ -5,14 +5,19 @@ Wants=network-online.target
 
 [Service]
 User=pi
-ExecStart=/usr/local/bin/autossh -M 0 -N \
+# TUNNEL_PORT comes from this Pi's own .env — each Pi needs a unique remote
+# port on the VM (multiple Pis all forwarding to the same port would collide,
+# only one tunnel could actually bind it). Defaults to 2222 for Pis
+# provisioned before this became configurable.
+EnvironmentFile=-/home/pi/orderbox-pi/.env
+ExecStart=/bin/sh -c '/usr/local/bin/autossh -M 0 -N \
   -o ServerAliveInterval=30 \
   -o ServerAliveCountMax=3 \
   -o ExitOnForwardFailure=yes \
   -o StrictHostKeyChecking=no \
   -i /home/pi/.ssh/orderbox_tunnel \
-  -R 2222:localhost:22 \
-  josh@34.89.22.14
+  -R ${TUNNEL_PORT:-2222}:localhost:22 \
+  josh@34.89.22.14'
 Restart=always
 RestartSec=10
 
