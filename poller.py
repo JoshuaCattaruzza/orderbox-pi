@@ -15,6 +15,7 @@ class OrderPoller:
         self._orders = {}
         self._lock = threading.Lock()
         self._new_order_callbacks = []
+        self._pending_new_callbacks = []
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._reconnect_notice_until = 0
 
@@ -23,6 +24,13 @@ class OrderPoller:
 
     def on_new_order(self, callback):
         self._new_order_callbacks.append(callback)
+
+    def on_pending_new_orders(self, callback):
+        # Fires every poll tick (not just on arrival) as long as at least one
+        # order is still in NEW status — drives a repeating alert until the
+        # restaurant accepts (-> ACCEPTED) or declines (-> CANCELLED, drops
+        # out of the fetched list) it.
+        self._pending_new_callbacks.append(callback)
 
     def get_orders(self):
         with self._lock:
@@ -54,6 +62,13 @@ class OrderPoller:
                                 cb(order)
                             except Exception:
                                 log.exception("Error in new-order callback")
+
+                if any(o["status"] == "NEW" for o in orders):
+                    for cb in self._pending_new_callbacks:
+                        try:
+                            cb()
+                        except Exception:
+                            log.exception("Error in pending-new-orders callback")
 
             except Exception:
                 log.exception("Polling error")

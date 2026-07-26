@@ -42,6 +42,10 @@ except Exception:
 @poller.on_new_order
 def _on_new_order(order):
     log.info("New order: #%s from %s", order["woo_order_id"], order.get("customer_name"))
+
+
+@poller.on_pending_new_orders
+def _on_pending_new_orders():
     play_notification()
 
 
