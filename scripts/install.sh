@@ -158,6 +158,19 @@ sudo systemctl enable orderbox-tunnel.service
 
 PUBKEY=$(cat "$SSH_KEY.pub")
 
+# Restrict the tunnel key to reverse-forwarding only. The Pi sits in an
+# untrusted restaurant — if the device (and this key) is stolen, the key must
+# not grant a shell on the VM or local forwards to the VM's cloud-sql-proxy.
+#   restrict           — no PTY, no X11/agent forwarding, no ~/.ssh/rc
+#   port-forwarding    — re-enable forwarding, limited by the two options below
+#   permitopen         — local forwards (-L) locked to a dead port (discard)
+#   permitlisten       — remote listen (-R) allowed only on this Pi's tunnel port
+#   command=/bin/false — any shell/exec request exits immediately (autossh uses -N)
+TUNNEL_PORT_VAL=$(grep -E '^TUNNEL_PORT=' "$REPO_DIR/.env" 2>/dev/null | cut -d= -f2)
+TUNNEL_PORT_VAL="${TUNNEL_PORT_VAL:-2222}"
+AK_LINE="restrict,port-forwarding,permitopen=\"127.0.0.1:9\",permitlisten=\"${TUNNEL_PORT_VAL}\",command=\"/bin/false\" $PUBKEY"
+AK_LINE_ESC="${AK_LINE//\"/\\\"}"
+
 echo ""
 echo "======================================================"
 echo " NEXT STEPS"
@@ -165,9 +178,14 @@ echo "======================================================"
 echo ""
 echo "1. Edit $REPO_DIR/.env with your API URL, subdomain, printer IP and API key"
 echo ""
-echo "2. Run this ONE command from your dev machine to authorise the tunnel:"
+echo "2. Run this ONE command from your dev machine to authorise the tunnel"
+echo "   (the key is restricted to reverse-tunnel-only: no shell, no local"
+echo "   forwards, remote listen only on port ${TUNNEL_PORT_VAL}):"
 echo ""
-echo "   gcloud compute ssh orderbox-wp-vm --zone=europe-west2-b --project=orderbox-487000 --command=\"echo '$PUBKEY' >> ~/.ssh/authorized_keys\""
+echo "   gcloud compute ssh orderbox-wp-vm --zone=europe-west2-b --project=orderbox-487000 --command=\"echo '$AK_LINE_ESC' >> ~/.ssh/authorized_keys\""
+echo ""
+echo "   If you later change TUNNEL_PORT in .env, update the permitlisten port"
+echo "   in the VM's ~/.ssh/authorized_keys line to match."
 echo ""
 echo "3. Then on the Pi:"
 echo "       sudo systemctl start orderbox-tunnel.service"
