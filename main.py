@@ -266,4 +266,11 @@ def wifi_connect():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
+    # Loopback only by default: this app has no authentication and exposes
+    # order decline (= real refunds), pause, reprint, and sudo-nmcli WiFi
+    # endpoints — it must not be reachable from the restaurant LAN. The kiosk
+    # Chromium runs on this device and uses http://localhost:5000. Local dev in
+    # Docker overrides the bind via `flask run --host=0.0.0.0` (safe there —
+    # exposure is controlled by the compose port mapping).
+    bind_host = os.environ.get("ORDERBOX_BIND_HOST", "127.0.0.1")
+    app.run(host=bind_host, port=5000, debug=False, threaded=True)
