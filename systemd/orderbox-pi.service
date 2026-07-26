@@ -1,7 +1,8 @@
 [Unit]
 Description=OrderBox Pi Dashboard
-After=network-online.target
+After=network-online.target orderbox-audio-setup.service
 Wants=network-online.target
+Wants=orderbox-audio-setup.service
 
 [Service]
 User=pi

@@ -1,0 +1,12 @@
+[Unit]
+Description=OrderBox audio device auto-detect (writes /etc/asound.conf)
+After=sound.target
+Before=orderbox-pi.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/home/pi/orderbox-pi/scripts/detect-audio-card.sh
+
+[Install]
+WantedBy=multi-user.target

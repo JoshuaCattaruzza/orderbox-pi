@@ -32,14 +32,31 @@ def _extract_delivery_time(metadata):
     return time_slot or date or None
 
 
+PRINT_TIMEOUT = 15  # seconds — usblp writes can block indefinitely if the printer is offline/jammed
+
+
 def print_order(order, tenant_info=None, reprint=False):
+    import threading
     from escpos.printer import File
 
-    p = File(PRINTER_DEV)
-    try:
-        _print(p, order, tenant_info or {}, reprint=reprint)
-    finally:
-        p.close()
+    error = []
+
+    def _run():
+        p = File(PRINTER_DEV)
+        try:
+            _print(p, order, tenant_info or {}, reprint=reprint)
+        except Exception as e:
+            error.append(e)
+        finally:
+            p.close()
+
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    t.join(PRINT_TIMEOUT)
+    if t.is_alive():
+        raise TimeoutError(f"Printer did not respond within {PRINT_TIMEOUT}s ({PRINTER_DEV})")
+    if error:
+        raise error[0]
 
 
 def _print(p, order, tenant_info, reprint=False):
