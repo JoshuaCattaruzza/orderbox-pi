@@ -29,6 +29,21 @@ function setWcAuthError(error) {
   }
 }
 
+function setReconnectNotice(active) {
+  let banner = document.getElementById('reconnect-banner');
+  if (active) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'reconnect-banner';
+      banner.className = 'reconnect-banner';
+      banner.textContent = '✓ Connectivity restored — orders were paused while this device was offline.';
+      document.body.insertBefore(banner, document.querySelector('main') || document.body.firstChild);
+    }
+  } else {
+    banner?.remove();
+  }
+}
+
 // ── Touch scroll ───────────────────────────────────────────────────────────
 let _scrollTarget = null, _scrollStartY = 0, _scrollStartTop = 0;
 
@@ -95,6 +110,7 @@ async function fetchOrders() {
     render(data);
     setPaused(data.paused ?? _paused);
     setWcAuthError(data.wc_auth_error ?? false);
+    setReconnectNotice(data.reconnect_notice ?? false);
     setStatus(true);
   } catch {
     setStatus(false);

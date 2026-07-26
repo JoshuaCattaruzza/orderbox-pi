@@ -24,6 +24,8 @@ _wc_auth_error = False
 try:
     _tenant_info = api_client.get_tenant_info()
     _wc_auth_error = bool(_tenant_info.get("wc_auth_error", False))
+    if _tenant_info.get("pi_was_offline"):
+        poller.note_reconnect()
     log.info("Tenant info loaded: %s, wc_auth_error=%s", _tenant_info.get("restaurant_name"), _wc_auth_error)
 except Exception:
     log.warning("Failed to fetch tenant info — receipt header will be empty")
@@ -61,6 +63,7 @@ def orders():
         "PRINTED":      [o for o in all_orders if o["status"] == "PRINTED"],
         "paused":       _paused,
         "wc_auth_error": _wc_auth_error,
+        "reconnect_notice": poller.get_reconnect_notice(),
     })
 
 
@@ -112,7 +115,7 @@ def complete(order_id):
 @app.route("/api/orders/history")
 def history():
     try:
-        orders = api_client.get_orders(["COMPLETED", "CANCELLED"])
+        orders, _ = api_client.get_orders(["COMPLETED", "CANCELLED"])
         return jsonify({"orders": orders})
     except Exception as e:
         log.exception("Failed to fetch history")
@@ -126,6 +129,8 @@ def _refresh_tenant_info():
         info = api_client.get_tenant_info()
         _tenant_info = info
         _wc_auth_error = bool(info.get("wc_auth_error", False))
+        if info.get("pi_was_offline"):
+            poller.note_reconnect()
     except Exception:
         log.warning("Background tenant info refresh failed")
     threading.Timer(60, _refresh_tenant_info).start()

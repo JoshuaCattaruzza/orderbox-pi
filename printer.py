@@ -75,49 +75,9 @@ def _print(p, order, tenant_info, reprint=False):
     p.text(f"Order #{order['woo_order_id']}\n")
     p.text(f"{LINE}\n")
 
-    # Customer
-    p.set(align="left", bold=True)
-    p.text("[CUSTOMER]\n")
-    p.text(f"{order.get('customer_name') or 'Unknown'}\n")
-    p.set(bold=False)
-    if order.get("customer_phone"):
-        p.text(f"{order['customer_phone']}\n")
-
-    # Delivery type
-    p.text("\n")
-    p.set(bold=True)
-    p.text(f"[{delivery_type}]\n")
-    p.set(bold=False)
-    if delivery_type == "DELIVERY":
-        shipping = metadata.get("shipping") or {}
-        addr_parts = [
-            shipping.get("address_1", ""),
-            shipping.get("address_2", ""),
-            shipping.get("city", ""),
-            shipping.get("postcode", ""),
-        ]
-        for part in addr_parts:
-            if part:
-                p.text(f"{part}\n")
-
-    meta_data = metadata.get("meta_data") or []
-    delivery_date = next((m["value"] for m in meta_data if m.get("key") == "Delivery Date"), None)
-    delivery_slot = next((m["value"] for m in meta_data if m.get("key") == "_orddd_time_slot"), None)
-    if delivery_date or delivery_slot:
-        p.text("\n")
-    if delivery_date:
-        p.set(bold=True)
-        p.text(f"{delivery_date}\n")
-        p.set(bold=False)
-    if delivery_slot:
-        p.set(bold=True)
-        p.text(f"{delivery_slot}\n")
-        p.set(bold=False)
-
-    p.text(f"{LINE}\n")
-
-    # Items — Font B for smaller text so more of the dish name is readable
-    p.set(font="b", align="left", bold=False)
+    # Items — Font B for smaller text so more of the dish name is readable;
+    # bold so they stand out clearly for kitchen staff
+    p.set(font="b", align="left", bold=True)
     if line_items:
         for item in line_items:
             qty = item.get("quantity", 1)
@@ -157,6 +117,47 @@ def _print(p, order, tenant_info, reprint=False):
         p.text(f"Collect £{order.get('total_amount') or '0.00'}\n")
         p.text("at door\n")
     p.set(bold=False, align="left")
+
+    # Customer — font left at "a" by the payment section above
+    p.set(align="left", bold=True)
+    p.text("[CUSTOMER]\n")
+    p.text(f"{order.get('customer_name') or 'Unknown'}\n")
+    p.set(bold=False)
+    if order.get("customer_phone"):
+        p.text(f"{order['customer_phone']}\n")
+
+    # Delivery type
+    p.text("\n")
+    p.set(bold=True)
+    p.text(f"[{delivery_type}]\n")
+    p.set(bold=False)
+    if delivery_type == "DELIVERY":
+        shipping = metadata.get("shipping") or {}
+        addr_parts = [
+            shipping.get("address_1", ""),
+            shipping.get("address_2", ""),
+            shipping.get("city", ""),
+            shipping.get("postcode", ""),
+        ]
+        for part in addr_parts:
+            if part:
+                p.text(f"{part}\n")
+
+    meta_data = metadata.get("meta_data") or []
+    delivery_date = next((m["value"] for m in meta_data if m.get("key") == "Delivery Date"), None)
+    delivery_slot = next((m["value"] for m in meta_data if m.get("key") == "_orddd_time_slot"), None)
+    if delivery_date or delivery_slot:
+        p.text("\n")
+    if delivery_date:
+        p.set(bold=True)
+        p.text(f"{delivery_date}\n")
+        p.set(bold=False)
+    if delivery_slot:
+        p.set(bold=True)
+        p.text(f"{delivery_slot}\n")
+        p.set(bold=False)
+
+    p.text(f"{LINE}\n")
 
     # Customer note
     note = metadata.get("customer_note", "").strip()

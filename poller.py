@@ -6,6 +6,9 @@ from api_client import get_orders
 log = logging.getLogger(__name__)
 
 
+RECONNECT_NOTICE_SECONDS = 300
+
+
 class OrderPoller:
     def __init__(self, interval=10):
         self.interval = interval
@@ -13,6 +16,7 @@ class OrderPoller:
         self._lock = threading.Lock()
         self._new_order_callbacks = []
         self._thread = threading.Thread(target=self._run, daemon=True)
+        self._reconnect_notice_until = 0
 
     def start(self):
         self._thread.start()
@@ -24,10 +28,19 @@ class OrderPoller:
         with self._lock:
             return list(self._orders.values())
 
+    def get_reconnect_notice(self):
+        return time.time() < self._reconnect_notice_until
+
+    def note_reconnect(self):
+        log.info("Pi reconnected after being auto-paused for lost connectivity")
+        self._reconnect_notice_until = time.time() + RECONNECT_NOTICE_SECONDS
+
     def _run(self):
         while True:
             try:
-                orders = get_orders(["NEW", "ACCEPTED", "PRINTED"])
+                orders, pi_was_offline = get_orders(["NEW", "ACCEPTED", "PRINTED"])
+                if pi_was_offline:
+                    self.note_reconnect()
 
                 with self._lock:
                     existing_ids = set(self._orders.keys())

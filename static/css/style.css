@@ -512,6 +512,22 @@ main.columns {
   line-height: 1.4;
 }
 
+/* ── Reconnect notice banner (informational, not an ongoing error) ── */
+.reconnect-banner {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  background: rgba(46,213,115,0.92);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 14px 20px;
+  z-index: 89;
+  line-height: 1.4;
+}
+
 /* ── Pause button ── */
 .btn-pause {
   padding: 16px 26px;

@@ -28,7 +28,8 @@ def get_orders(statuses=None):
         timeout=TIMEOUT,
     )
     resp.raise_for_status()
-    return resp.json()["orders"]
+    data = resp.json()
+    return data["orders"], data.get("pi_was_offline", False)
 
 
 def accept_order(order_id, eta_minutes=20):
