@@ -63,9 +63,11 @@ echo "==> Installing systemd services"
 sudo cp "$REPO_DIR/systemd/orderbox-pi.service"          /etc/systemd/system/
 sudo cp "$REPO_DIR/systemd/orderbox-tunnel.service"      /etc/systemd/system/
 sudo cp "$REPO_DIR/systemd/orderbox-audio-setup.service" /etc/systemd/system/
+sudo cp "$REPO_DIR/systemd/orderbox-brightness.service"  /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable orderbox-pi.service
 sudo systemctl enable orderbox-audio-setup.service
+sudo systemctl enable orderbox-brightness.service
 
 echo "==> Detecting audio card now (best-effort — only works if the overlay is already active)"
 sudo bash "$REPO_DIR/scripts/detect-audio-card.sh" || true

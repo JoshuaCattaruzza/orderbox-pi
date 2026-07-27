@@ -1,0 +1,17 @@
+[Unit]
+# The Touch Display 2 boots at roughly half brightness (15 of a possible 31),
+# which is hard to read across a counter in a bright restaurant. Set it to the
+# configured level on every boot. SCREEN_BRIGHTNESS in the Pi's .env overrides
+# the default; the panel's device name is discovered at runtime because it is
+# not stable across kernel versions.
+Description=OrderBox screen brightness
+After=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=-/home/pi/orderbox-pi/.env
+ExecStart=/bin/sh -c 'for d in /sys/class/backlight/*/; do [ -w "$d/brightness" ] || continue; max=$(cat "$d/max_brightness"); echo "${SCREEN_BRIGHTNESS:-$max}" > "$d/brightness"; done'
+
+[Install]
+WantedBy=multi-user.target
