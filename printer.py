@@ -129,10 +129,14 @@ def _print(p, order, tenant_info, reprint=False):
         p.set(bold=False, align="center")
         p.text("Do not collect payment\n")
     elif payment == "cod":
-        p.text("** CASH ON DELIVERY **\n")
+        # Cash is collected at the door for delivery, but over the counter for
+        # collection — printing "AT DOOR" on a collection ticket tells staff to
+        # expect a driver run for an order the customer is coming to fetch.
+        collecting = delivery_type != "DELIVERY"
+        p.text("** CASH ON COLLECTION **\n" if collecting else "** CASH ON DELIVERY **\n")
         p.set(bold=False, align="center")
         p.text(f"Collect £{order.get('total_amount') or '0.00'}\n")
-        p.text("at door\n")
+        p.text("at counter\n" if collecting else "at door\n")
     p.set(bold=False, align="left")
 
     # Customer — font left at "a" by the payment section above
