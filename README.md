@@ -45,12 +45,17 @@ At the end it prints a single `gcloud` command to authorise the tunnel key — c
 
 ### 4. Authorise the tunnel key on the VM
 
-Run the printed command from your dev machine:
+Run the printed command from your dev machine **verbatim** — it installs the
+key with restriction options, not a bare entry:
 
-```bash
-gcloud compute ssh orderbox-wp-vm --zone=europe-west2-b --project=orderbox-487000 \
-  --command="echo 'ssh-ed25519 AAAA...' >> ~/.ssh/authorized_keys"
 ```
+restrict,port-forwarding,permitopen="127.0.0.1:9",permitlisten="<TUNNEL_PORT>",command="/bin/false" ssh-ed25519 AAAA... orderbox-pi-tunnel
+```
+
+The restrictions mean a stolen Pi's key can only establish its own reverse
+tunnel on its assigned port — no shell on the VM, no PTY, no local forwards.
+See `orderbox-terraform/orderbox-ops.md` § "Pi tunnel key restrictions" for
+the rationale and for migrating older Pis.
 
 ### 5. Edit `.env`
 
@@ -63,8 +68,10 @@ nano ~/orderbox-pi/.env
 | `ORDERBOX_API_URL` | API base URL (e.g. `https://orderbox-api-xxx.a.run.app`) |
 | `ORDERBOX_SUBDOMAIN` | Restaurant subdomain (must match `tenants.subdomain` in the DB) |
 | `ORDERBOX_PI_API_KEY` | Pi API key (must match `tenants.pi_api_key` in the DB) |
+| `TUNNEL_PORT` | Remote port this Pi's reverse tunnel binds on the VM — **unique per Pi** (default `2222`; check orderbox-ops.md for the next free port) |
 | `PRINTER_DEV` | Printer device path (default `/dev/usb/lp0`) |
 | `POLL_INTERVAL` | Seconds between order polls (default `10`) |
+| `NOTIFICATION_SOUND_ENABLED` | Play the new-order chime (repeats every poll while an order sits in NEW) |
 | `KIOSK_MODE` | Set to `true` on the Pi — disables cursor and text selection |
 
 ### 6. Start services and reboot
@@ -137,8 +144,27 @@ When `wc_auth_error` is true, a non-dismissable red banner appears below the hea
 
 To fix: WooCommerce → Settings → Advanced → REST API → revoke the old key, generate a new one, update `woo_consumer_key` and `woo_consumer_secret` in the `tenants` table.
 
-### WiFi settings (`/settings`)
-A separate page (accessible via the gear icon) lets the operator scan for networks, select one, enter a password via the embedded on-screen keyboard, and connect — all without a physical keyboard. Uses `nmcli` via Flask API endpoints (`/api/wifi/status`, `/api/wifi/networks`, `/api/wifi/connect`). The `pi` user has passwordless `nmcli` via `/etc/sudoers.d/orderbox-nmcli`.
+### Settings page (`/settings`)
+A separate page (accessible via the gear icon) with two cards:
+
+**WiFi** — scan for networks, select one, enter a password via the embedded
+on-screen keyboard, and connect — all without a physical keyboard. Uses
+`nmcli` via Flask API endpoints (`/api/wifi/status`, `/api/wifi/networks`,
+`/api/wifi/connect`). The `pi` user has passwordless `nmcli` via
+`/etc/sudoers.d/orderbox-nmcli`.
+
+**Power** — a Shut down button with a two-step confirm (arm on first tap, 10s
+auto-disarm) that calls `POST /api/system/shutdown` for a graceful halt, so
+staff never pull the plug on a running system (unclean shutdowns corrupt SD
+cards). Requires passwordless `/usr/sbin/shutdown` via
+`/etc/sudoers.d/orderbox-shutdown` (installed by `install.sh`). To power back
+on: replug, or momentarily short GPIO3 (pin 5) to GND (pin 6) — the firmware
+boots a halted Pi from that pin.
+
+### Reconnect notice
+If the API reports the Pi was auto-paused for lost connectivity
+(`pi_was_offline`), the dashboard shows a green "connectivity restored"
+banner for 5 minutes after reconnecting.
 
 ---
 
@@ -148,14 +174,18 @@ Writes ESC/POS directly to `PRINTER_DEV` via `python-escpos`. The receipt layout
 
 1. **Restaurant header** — name (bold, centred), address (split by comma, one line each), phone, separator line
 2. **Order header** — `NEW ORDER` or `REPRINT` (double height/width), order number
-3. **Customer** — name and phone
-4. **Order type** — `[COLLECTION]` or `[DELIVERY]`. For delivery: full shipping address (line 1, line 2, city, postcode)
-5. **Delivery time** — if present, date and time slot printed on separate bold lines (from WooCommerce meta keys `Delivery Date` and `_orddd_time_slot`)
-6. **Items** — Font B (smaller, fits more dish name). Each item: `qty x name` right-aligned to `£price`. One blank line between items.
-7. **Total** — Font B bold, right-aligned
-8. **Payment** — `** PAID ONLINE **` (card) or `** CASH ON DELIVERY **` with collect amount
+3. **Items** — first, so the kitchen sees them without scanning down. Font B (smaller, fits more dish name), bold. Each item: `qty x name` right-aligned to `£price`. One blank line between items.
+4. **Total** — Font B bold, right-aligned (preceded by a Delivery fee line when applicable)
+5. **Payment** — `** PAID ONLINE **` (card) or `** CASH ON DELIVERY **` with collect amount
+6. **Customer** — name and phone
+7. **Order type** — `[COLLECTION]` or `[DELIVERY]`. For delivery: full shipping address (line 1, line 2, city, postcode)
+8. **Delivery time** — if present, date and time slot printed on separate bold lines (from WooCommerce meta keys `Delivery Date` and `_orddd_time_slot`)
 9. **Customer note** — if present
 10. Three blank lines + cut
+
+`tools/preview_receipt.py` renders the exact layout as plain text for review
+without a physical printer. Printing runs under a 15s timeout so a jammed or
+offline printer can't hang an order action.
 
 Constants: `PAPER_WIDTH = 24` (Font A), `PAPER_WIDTH_B = 32` (Font B). `_blen()` is used for byte-length calculations (£ = 2 UTF-8 bytes).
 
@@ -168,14 +198,30 @@ If `PRINTER_DEV` is absent (local dev), printing fails gracefully — `print_ok`
 The Pi maintains a persistent reverse SSH tunnel to the VM:
 
 ```
-Pi → autossh → josh@34.89.22.14 port 2222 → Pi SSH port 22
+Pi → autossh → josh@34.89.22.14 port <TUNNEL_PORT> → Pi SSH port 22
 ```
+
+The port comes from `TUNNEL_PORT` in this Pi's `.env` (via `EnvironmentFile`
+in the unit; default 2222) — each Pi needs a unique port on the VM. The key
+authenticating this tunnel is restricted on the VM (no shell, listen only on
+this port — see step 4 above).
 
 This lets you SSH to the Pi from anywhere by hopping through the VM:
 
 ```bash
 gcloud compute ssh orderbox-wp-vm --zone=europe-west2-b -- \
-  ssh -p 2222 pi@localhost
+  ssh -p <TUNNEL_PORT> pi@localhost
 ```
 
+That inbound hop authenticates against the Pi's own sshd (the restricted
+tunnel key plays no part in it).
+
 The tunnel is managed by `systemd/orderbox-tunnel.service` using `autossh` with keepalives every 30s.
+
+## Security posture
+
+Flask binds to loopback only (`ORDERBOX_BIND_HOST`, default `127.0.0.1`) —
+the app is unauthenticated and exposes refund-triggering and shutdown
+endpoints, so it must never be reachable from the restaurant LAN; the kiosk
+Chromium on this device is the only client. Local dev overrides the bind via
+its own compose port mapping.
