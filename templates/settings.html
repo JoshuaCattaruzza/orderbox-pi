@@ -127,6 +127,9 @@
     .btn:disabled { opacity: 0.4; }
     .btn-green { background: var(--green); color: #000; }
     .btn-muted { background: var(--border); color: var(--text); }
+    .btn-red   { background: var(--red); color: #fff; }
+    .card-note { font-size: 0.9rem; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+    .card-msg  { margin-top: 14px; font-size: 0.9rem; min-height: 1.4em; }
     #msg { margin-top: 14px; font-size: 0.9rem; min-height: 1.4em; }
     .msg-ok  { color: var(--green); }
     .msg-err { color: var(--red); }
@@ -213,6 +216,19 @@
         <button class="btn btn-green" id="connect-btn" onclick="connectWifi()">Connect</button>
       </div>
       <div id="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Power</h2>
+      <div class="card-note">
+        Shuts the device down safely so the memory card isn't damaged.
+        Wait for the screen to go black before unplugging.
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-red" id="shutdown-btn" onclick="shutdownDevice()">Shut down</button>
+        <button class="btn btn-muted" id="shutdown-cancel" onclick="shutdownCancel()" style="display:none">Cancel</button>
+      </div>
+      <div class="card-msg" id="power-msg"></div>
     </div>
   </div>
 
@@ -317,6 +333,57 @@
           btn.disabled = false;
           btn.textContent = 'Connect';
           setMsg('Request failed', false);
+        });
+    };
+
+    /* ── Power ── */
+    var _shutdownArmed = false, _shutdownTimer = null;
+
+    function powerMsg(text, ok) {
+      var el = document.getElementById('power-msg');
+      el.textContent = text;
+      el.className = 'card-msg ' + (ok ? 'msg-ok' : 'msg-err');
+    }
+
+    window.shutdownCancel = function () {
+      _shutdownArmed = false;
+      clearTimeout(_shutdownTimer);
+      document.getElementById('shutdown-btn').textContent = 'Shut down';
+      document.getElementById('shutdown-cancel').style.display = 'none';
+      powerMsg('', true);
+    };
+
+    window.shutdownDevice = function () {
+      var btn = document.getElementById('shutdown-btn');
+      if (!_shutdownArmed) {
+        // Two-step confirm: arm on first tap, auto-disarm after 10s.
+        _shutdownArmed = true;
+        btn.textContent = 'Tap again to confirm';
+        document.getElementById('shutdown-cancel').style.display = '';
+        _shutdownTimer = setTimeout(window.shutdownCancel, 10000);
+        return;
+      }
+      clearTimeout(_shutdownTimer);
+      btn.disabled = true;
+      btn.textContent = 'Shutting down…';
+      document.getElementById('shutdown-cancel').style.display = 'none';
+      fetch('/api/system/shutdown', { method: 'POST' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.ok) {
+            powerMsg('Shutting down — wait for the screen to go black, then it\'s safe to unplug.', true);
+          } else {
+            btn.disabled = false;
+            btn.textContent = 'Shut down';
+            _shutdownArmed = false;
+            powerMsg(d.error || 'Shutdown failed', false);
+          }
+        })
+        .catch(function () {
+          btn.disabled = false;
+          btn.textContent = 'Shut down';
+          _shutdownArmed = false;
+          powerMsg('Request failed', false);
         });
     };
 

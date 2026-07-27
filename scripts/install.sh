@@ -142,6 +142,10 @@ echo "==> Granting passwordless nmcli for WiFi management"
 echo "$INSTALL_USER ALL=(ALL) NOPASSWD: /usr/bin/nmcli" | sudo tee /etc/sudoers.d/orderbox-nmcli > /dev/null
 sudo chmod 440 /etc/sudoers.d/orderbox-nmcli
 
+echo "==> Granting passwordless shutdown for the settings power button"
+echo "$INSTALL_USER ALL=(ALL) NOPASSWD: /usr/sbin/shutdown" | sudo tee /etc/sudoers.d/orderbox-shutdown > /dev/null
+sudo chmod 440 /etc/sudoers.d/orderbox-shutdown
+
 echo "==> Generating SSH tunnel key"
 mkdir -p "/home/$INSTALL_USER/.ssh"
 chmod 700 "/home/$INSTALL_USER/.ssh"

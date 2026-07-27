@@ -262,6 +262,25 @@ def wifi_connect():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/system/shutdown", methods=["POST"])
+def system_shutdown():
+    log.info("Shutdown requested from settings page")
+    try:
+        # Detached, with a short delay, so the HTTP response reaches the
+        # browser before systemd starts stopping this process — a blocking
+        # subprocess.run would make the UI show a failed request even though
+        # the shutdown worked. Needs the orderbox-shutdown sudoers drop-in
+        # (see scripts/install.sh).
+        subprocess.Popen(
+            ["sh", "-c", "sleep 1; sudo /usr/sbin/shutdown -h now"],
+            start_new_session=True,
+        )
+        return jsonify({"ok": True})
+    except Exception as e:
+        log.exception("Shutdown failed")
+        return jsonify({"error": str(e)}), 500
+
+
 
 
 
